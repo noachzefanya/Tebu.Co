@@ -1,0 +1,286 @@
+/* ============================================================
+   Tebu.Co — Global Design System
+   Material You dark theme + agritech palette
+   ============================================================ */
+
+/* ---------- Google Fonts (loaded via index.html) ---------- */
+:root {
+  /* --- Brand Palette (from original Tailwind config) --- */
+  --color-primary:               #a3d489;
+  --color-on-primary:            #103900;
+  --color-primary-container:     #0f3800;
+  --color-on-primary-container:  #76a45f;
+  --color-primary-fixed:         #bef1a3;
+  --color-primary-fixed-dim:     #a3d489;
+
+  --color-secondary:             #b6c4ff;
+  --color-on-secondary:          #05297a;
+  --color-secondary-container:   #264191;
+  --color-on-secondary-container:#9db2ff;
+
+  --color-tertiary:              #a6d64f;
+  --color-on-tertiary:           #233600;
+  --color-tertiary-container:    #233500;
+  --color-on-tertiary-container: #79a521;
+  --color-tertiary-fixed:        #c1f368;
+  --color-tertiary-fixed-dim:    #a6d64f;
+
+  --color-error:                 #ffb4ab;
+  --color-on-error:              #690005;
+  --color-error-container:       #93000a;
+  --color-on-error-container:    #ffdad6;
+
+  --color-surface:               #101415;
+  --color-surface-dim:           #101415;
+  --color-surface-bright:        #363a3b;
+  --color-surface-container-lowest:  #0b0f10;
+  --color-surface-container-low:    #191c1e;
+  --color-surface-container:        #1d2022;
+  --color-surface-container-high:   #272a2c;
+  --color-surface-container-highest: #323537;
+
+  --color-on-surface:            #e0e3e5;
+  --color-on-surface-variant:    #c2c9ba;
+  --color-outline:               #8c9385;
+  --color-outline-variant:       #42493d;
+  --color-inverse-surface:       #e0e3e5;
+  --color-inverse-on-surface:    #2d3133;
+  --color-inverse-primary:       #3e692b;
+  --color-background:            #101415;
+  --color-on-background:         #e0e3e5;
+  --color-surface-tint:          #a3d489;
+  --color-surface-variant:       #323537;
+
+  /* --- Typography --- */
+  --font-display: 'Hanken Grotesk', sans-serif;
+  --font-body:    'Inter', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+
+  /* --- Spacing --- */
+  --space-base:       8px;
+  --space-container:  20px;
+  --space-gap:        16px;
+  --space-section:    32px;
+  --space-gutter:     12px;
+
+  /* --- Radii --- */
+  --radius-sm:   8px;
+  --radius-md:   16px;
+  --radius-lg:   24px;
+  --radius-xl:   32px;
+  --radius-full: 9999px;
+}
+
+/* ---------- Reset & Base ---------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #050505;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body);
+  color: var(--color-on-surface);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+button { cursor: pointer; font-family: inherit; border: none; background: none; }
+
+/* ---------- Scrollbar hide ---------- */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Apply globally to body, root container, and all overflow containers */
+html, body, #root {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#root::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---------- Ambient orb pulse ---------- */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50%       { opacity: 0.55; transform: scale(1.1); }
+}
+.ambient-orb { animation: pulse-glow 8s infinite alternate ease-in-out; }
+
+/* ---------- View layer transitions ---------- */
+.view-layer {
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px) scale(0.98);
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-container);
+  padding-top: 80px;
+  /* BottomNav = bottom:24px + height:64px = 88px total.
+     120px guarantees nothing is ever clipped under the dock. */
+  padding-bottom: 120px;
+  overflow-y: auto;   /* was: overflow: hidden — the root cause of clipping */
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+.view-layer.active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+  z-index: 10;
+}
+
+/* ---------- Typography helpers ---------- */
+.text-display  { font-family: var(--font-display); font-size: 48px; line-height: 56px; font-weight: 800; letter-spacing: -0.02em; }
+.text-h1       { font-family: var(--font-display); font-size: 32px; line-height: 40px; font-weight: 700; }
+.text-h2       { font-family: var(--font-display); font-size: 24px; line-height: 32px; font-weight: 700; }
+.text-h3       { font-family: var(--font-display); font-size: 24px; line-height: 32px; font-weight: 600; }
+.text-stat     { font-family: var(--font-display); font-size: 28px; line-height: 32px; font-weight: 700; }
+.text-body-lg  { font-family: var(--font-body);    font-size: 18px; line-height: 28px; font-weight: 400; }
+.text-body     { font-family: var(--font-body);    font-size: 16px; line-height: 24px; font-weight: 400; }
+.text-caps     { font-family: var(--font-mono);    font-size: 11px; line-height: 16px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* ---------- Color helpers ---------- */
+.c-primary          { color: var(--color-primary); }
+.c-tertiary         { color: var(--color-tertiary); }
+.c-on-surface       { color: var(--color-on-surface); }
+.c-on-surface-var   { color: var(--color-on-surface-variant); }
+.c-white            { color: #fff; }
+
+/* ---------- Card glass ---------- */
+.glass-card {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.glass-card-dark {
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* ---------- Stat mini card ---------- */
+.stat-mini {
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}
+
+/* ---------- CTA Button ---------- */
+.btn-cta {
+  width: 100%;
+  background: var(--color-tertiary);
+  color: var(--color-on-tertiary);
+  border-radius: var(--radius-md);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  box-shadow: 0 0 24px rgba(166,214,79,0.25);
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+.btn-cta:hover  { background: var(--color-tertiary-fixed); box-shadow: 0 0 32px rgba(166,214,79,0.4); transform: translateY(-1px); }
+.btn-cta:active { transform: scale(0.98); }
+
+.btn-ghost {
+  width: 100%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: #fff;
+  border-radius: var(--radius-md);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  backdrop-filter: blur(12px);
+  transition: background 0.2s, transform 0.15s;
+}
+.btn-ghost:hover  { background: rgba(255,255,255,0.14); }
+.btn-ghost:active { transform: scale(0.98); }
+
+/* ---------- Status chip ---------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.chip-primary  { background: rgba(163,212,137,0.15); color: var(--color-primary); border: 1px solid rgba(163,212,137,0.25); }
+.chip-tertiary { background: rgba(166,214,79,0.15);  color: var(--color-tertiary); border: 1px solid rgba(166,214,79,0.25); }
+.chip-surface  { background: rgba(255,255,255,0.08); color: var(--color-on-surface-variant); border: 1px solid rgba(255,255,255,0.08); }
+
+/* ---------- Bar chart ---------- */
+.bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; }
+.bar-bg   { width: 100%; border-radius: 4px 4px 0 0; position: relative; overflow: hidden; }
+.bar-grad { position: absolute; inset: 0; background: linear-gradient(to top, transparent, currentColor); }
+
+/* ---------- App Container ---------- */
+.app-container {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 32px 80px rgba(0,0,0,0.8);
+}
+.app-container.farmer-mode {
+  width: 390px;
+  height: 844px;
+  border-radius: 40px;
+  border: 1px solid #262626;
+}
+.app-container.admin-mode {
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+  border: none;
+}
+
+/* ---------- Admin Dashboard Grid ---------- */
+.admin-dashboard-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+@media (min-width: 1024px) {
+  .admin-dashboard-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr 380px;
+    gap: 24px;
+    padding: 32px;
+    overflow: hidden; /* Lock scroll on root, let columns scroll */
+  }
+  .admin-col {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: 100%;
+  }
+}
