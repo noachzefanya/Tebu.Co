@@ -135,4 +135,44 @@ export default defineConfig({
     port: 5173,
     open: false,
   },
+
+  build: {
+    // ── Code-splitting: break the 836 kB monolith into cacheable chunks ──────
+    // Browser caches vendor chunks independently — only the app chunk needs
+    // re-downloading when you deploy a new version of your own code.
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          // React core — most stable, cache forever
+          if (id.includes('node_modules/react/') ||
+              id.includes('node_modules/react-dom/') ||
+              id.includes('node_modules/scheduler/')) {
+            return 'vendor-react';
+          }
+
+          // Supabase — large SDK, changes rarely
+          if (id.includes('node_modules/@supabase/')) {
+            return 'vendor-supabase';
+          }
+
+          // QR / Camera libs — html5-qrcode is ~300 kB alone
+          if (id.includes('node_modules/html5-qrcode') ||
+              id.includes('node_modules/qrcode.react') ||
+              id.includes('node_modules/qrcode/')) {
+            return 'vendor-qr';
+          }
+
+          // Lucide icons — only what's imported (tree-shaken), group together
+          if (id.includes('node_modules/lucide-react/')) {
+            return 'vendor-icons';
+          }
+
+          // Everything else in node_modules → general vendor chunk
+          if (id.includes('node_modules/')) {
+            return 'vendor-misc';
+          }
+        },
+      },
+    },
+  },
 });
