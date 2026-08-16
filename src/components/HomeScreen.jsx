@@ -96,7 +96,9 @@ export default function HomeScreen({ active, user, activeSpta, onHarvestLogged, 
   });
 
   return (
-    <div className={`view-layer${active ? ' active' : ''} hide-scrollbar`}>
+    <div className={`view-layer${active ? ' active' : ''} hide-scrollbar`}
+      style={{ paddingBottom: 100 }}   /* ensure content clears the fixed BottomNav */
+    >
       {/* ── Welcome heading ── */}
       <div style={{ marginBottom: 12 }}>
         <p className="text-caps c-on-surface-var" style={{ marginBottom: 4 }}>
@@ -138,11 +140,11 @@ export default function HomeScreen({ active, user, activeSpta, onHarvestLogged, 
           { label: 'ESTIMASI', value: totalEst.toFixed(0), unit: 'Ton' },
           { label: 'UMUR', value: '11', unit: 'Bulan' },
         ].map(({ label, value, unit }) => (
-          <div key={label} className="stat-mini" style={{ textAlign: 'center', padding: '10px 4px' }}>
-            <p className="text-caps c-on-surface-var" style={{ marginBottom: 2 }}>{label}</p>
-            <p className="text-stat c-primary" style={{ lineHeight: 1.1 }}>
+          <div key={label} className="stat-mini" style={{ textAlign: 'center', padding: '10px 4px', minWidth: 0, overflow: 'hidden' }}>
+            <p className="text-caps c-on-surface-var" style={{ marginBottom: 2, fontSize: 9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</p>
+            <p className="text-stat c-primary" style={{ lineHeight: 1.1, fontSize: 'clamp(16px,4vw,28px)', wordBreak: 'break-all' }}>
               {value}
-              <span className="text-body c-on-surface-var" style={{ fontSize: 12 }}> {unit}</span>
+              <span className="text-body c-on-surface-var" style={{ fontSize: 'clamp(10px,2.5vw,12px)' }}> {unit}</span>
             </p>
           </div>
         ))}

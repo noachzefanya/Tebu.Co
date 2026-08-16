@@ -19,8 +19,8 @@ export default function BottomNav({ activeTab, onChange }) {
     <nav
       aria-label="Main navigation"
       style={{
-        position: 'absolute',
-        bottom: 24,
+        position: 'fixed',
+        bottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
         left: '50%',
         transform: 'translateX(-50%)',
         width: '88%',

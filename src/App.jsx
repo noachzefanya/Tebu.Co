@@ -197,10 +197,12 @@ export default function App() {
       {appRole === 'farmer' && <NotificationBanner activeSpta={activeSpta} />}
 
       {/* ── Content Canvas ── */}
-      <main className="no-scrollbar" style={{ 
-        position: 'relative', flex: 1, width: '100%', zIndex: 10, minHeight: 0, 
+      <main className="no-scrollbar touch-scroll" style={{ 
+        position: 'relative', flex: 1, width: '100%', zIndex: 10,
+        minHeight: 0,           /* CRITICAL: allows flex child to shrink and scroll */
         display: 'flex', flexDirection: 'column', 
-        overflowY: 'auto', paddingBottom: 144, overscrollBehavior: 'contain' 
+        overflowY: 'auto', overscrollBehavior: 'contain',
+        touchAction: 'pan-y',
       }}>
         {appRole === 'admin' ? (
           <MillAdminScreen />

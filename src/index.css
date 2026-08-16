@@ -74,16 +74,28 @@
 /* ---------- Reset & Base ---------- */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Dynamic viewport: fills exactly the visible area even when browser chrome shows/hides */
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
 body {
   background: #050505;
-  min-height: 100svh;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-body);
   color: var(--color-on-surface);
   -webkit-font-smoothing: antialiased;
-  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Touch momentum scroll — iOS & Android webview */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 button { cursor: pointer; font-family: inherit; border: none; background: none; }
@@ -242,18 +254,31 @@ body::-webkit-scrollbar,
 
 /* ---------- App Container ---------- */
 .app-container {
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 32px 80px rgba(0,0,0,0.8);
 }
+
+/* Farmer mode: phone shell — always fits the real visible viewport */
 .app-container.farmer-mode {
-  width: 390px;
-  height: 844px;
-  border-radius: 40px;
-  border: 1px solid #262626;
+  /* On actual phones: fill entire visible viewport */
+  width: 100vw;
+  height: 100dvh;            /* dvh = dynamic viewport height — excludes browser chrome */
+  border-radius: 0;
+  border: none;
 }
+
+/* On desktop/tablet: render as a centred phone frame */
+@media (min-width: 480px) {
+  .app-container.farmer-mode {
+    width: 390px;
+    height: min(844px, 100dvh);
+    border-radius: 40px;
+    border: 1px solid #262626;
+  }
+}
+
 .app-container.admin-mode {
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
   border-radius: 0;
   border: none;
 }

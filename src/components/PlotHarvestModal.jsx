@@ -196,8 +196,8 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
       {/* ── Bottom Sheet Container ── */}
       <div
         style={{
-          width: '100%', maxWidth: 420,
-          maxHeight: '85vh',
+          width: '100%', maxWidth: 480,
+          maxHeight: '88dvh',          /* dvh: excludes browser chrome so footer is never clipped */
           background: 'rgba(13,17,18,0.98)',
           border: '1px solid rgba(255,255,255,0.1)',
           borderRadius: '28px 28px 0 0',
@@ -205,6 +205,7 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
           boxShadow: '0 -16px 64px rgba(0,0,0,0.7)',
           animation: 'slideUpSheet 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
           overflow: 'hidden',
+          /* On desktop: center it like a regular modal */
         }}
       >
         {/* ── Drag Handle ── */}
@@ -251,11 +252,15 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
 
         {/* ── Scrollable Form Body ── */}
         <div
-          className="hide-scrollbar no-scrollbar"
+          className="hide-scrollbar no-scrollbar touch-scroll"
           style={{
-            flex: 1, overflowY: 'auto', overscrollBehavior: 'contain',
-            padding: '16px', display: 'flex', flexDirection: 'column', gap: 16,
-            touchAction: 'pan-y'
+            flex: 1,
+            minHeight: 0,            /* CRITICAL: without this, flex children won't shrink and footer hides */
+            overflowY: 'auto',
+            overscrollBehavior: 'contain',
+            padding: '16px',
+            display: 'flex', flexDirection: 'column', gap: 16,
+            touchAction: 'pan-y',
           }}
         >
           {/* ── Tab A: Plot ── */}
