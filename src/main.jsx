@@ -4,6 +4,21 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
 import App from './App.jsx';
 import './index.css';
 
+// ── iOS Safari 100vh fix ──────────────────────────────────────────────────────
+// Safari < 15 does not support `dvh`. We compute the real visible-area height
+// via window.innerHeight and expose it as --vh so CSS can use:
+//   height: calc(var(--vh, 1vh) * 100)  ← falls back to 1vh if JS hasn't run yet
+//
+// We also listen to orientationchange because rotating the device changes
+// window.innerHeight independently from the resize event on iOS.
+function setVhProperty() {
+  const vh = window.innerHeight * 0.01;
+  document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+setVhProperty();
+window.addEventListener('resize',            setVhProperty, { passive: true });
+window.addEventListener('orientationchange', setVhProperty, { passive: true });
+
 /**
  * PWAUpdatePrompt
  * ───────────────

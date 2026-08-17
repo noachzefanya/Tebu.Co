@@ -74,9 +74,14 @@
 /* ---------- Reset & Base ---------- */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* Dynamic viewport: fills exactly the visible area even when browser chrome shows/hides */
+/* Dynamic viewport: fills exactly the visible area even when browser chrome shows/hides.
+   iOS Safari: use dvh (dynamic viewport height) with --vh CSS variable fallback.
+   --vh is set in JS (see main.jsx) for browsers that don't support dvh yet. */
 html, body {
   height: 100%;
+  /* Prefer dvh; fall back to the JS-computed --vh variable, then to 100% */
+  min-height: 100dvh;
+  min-height: calc(var(--vh, 1vh) * 100);
   width: 100%;
   overflow: hidden;
 }
@@ -96,9 +101,29 @@ body {
 .touch-scroll {
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
+  overscroll-behavior-y: contain;
 }
 
-button { cursor: pointer; font-family: inherit; border: none; background: none; }
+/* ── iOS tap delay fix: eliminate 300ms ghost-click delay on all interactive elements. */
+button, a, [role="button"] {
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  background: none;
+  touch-action: manipulation; /* removes 300ms delay on iOS without disabling gestures */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── iOS Input zoom prevention:
+   Safari zooms in whenever a focused input has font-size < 16px.
+   Setting font-size: 16px on all form controls fixes this without viewport hacks.
+   We use max() so desktop styles can still use larger sizes. */
+input,
+textarea,
+select {
+  font-size: max(16px, 1em); /* floors at 16px — the threshold iOS uses to decide whether to zoom */
+  -webkit-appearance: none;  /* normalises across iOS/Android */
+}
 
 /* ---------- Scrollbar hide ---------- */
 .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -259,9 +284,11 @@ body::-webkit-scrollbar,
 
 /* Farmer mode: phone shell — always fits the real visible viewport */
 .app-container.farmer-mode {
-  /* On actual phones: fill entire visible viewport */
+  /* On actual phones: fill entire visible viewport.
+     Cascade: dvh is preferred; --vh (JS-computed) is the fallback for older iOS Safari. */
   width: 100vw;
-  height: 100dvh;            /* dvh = dynamic viewport height — excludes browser chrome */
+  height: 100dvh;
+  height: calc(var(--vh, 1vh) * 100); /* iOS Safari <15 fallback */
   border-radius: 0;
   border: none;
 }
@@ -271,6 +298,7 @@ body::-webkit-scrollbar,
   .app-container.farmer-mode {
     width: 390px;
     height: min(844px, 100dvh);
+    height: min(844px, calc(var(--vh, 1vh) * 100)); /* --vh fallback */
     border-radius: 40px;
     border: 1px solid #262626;
   }
@@ -279,6 +307,7 @@ body::-webkit-scrollbar,
 .app-container.admin-mode {
   width: 100vw;
   height: 100dvh;
+  height: calc(var(--vh, 1vh) * 100); /* iOS Safari <15 fallback */
   border-radius: 0;
   border: none;
 }
@@ -288,9 +317,12 @@ body::-webkit-scrollbar,
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 20px;
+  /* Account for iOS home indicator at the bottom */
+  padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px)) 20px;
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
 }
 
 @media (min-width: 1024px) {

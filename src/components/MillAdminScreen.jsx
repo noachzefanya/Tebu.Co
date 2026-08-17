@@ -19,15 +19,44 @@ export default function MillAdminScreen() {
     if (!scannedTruck) {
       const startCamera = async () => {
         try {
-          stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
+          // iOS Safari requires:
+          //  - facingMode as a plain string (not an object with {exact:})
+          //    because {exact:'environment'} throws OverconstrainedError on front-camera-only devices.
+          //  - No width/height ideals: they can trigger constraint errors on older iOS.
+          //  - HTTPS is required for getUserMedia on iOS (Safari blocks it on HTTP).
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: 'environment', // plain string — safe on all iOS devices
+            },
+            audio: false,
           });
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
+            // Some older iOS WebKit versions need an explicit play() call
+            // after setting srcObject — the autoPlay attribute alone is not enough.
+            videoRef.current.play().catch(() => {
+              // Silently swallow the AbortError that fires when the component
+              // unmounts before the play() promise resolves.
+            });
           }
         } catch (err) {
-          console.warn('Camera access error:', err);
-          setCameraError('Gagal mengakses kamera. Silakan periksa izin browser atau gunakan input manual.');
+          console.warn('[MillAdminScreen] Camera access error:', err.name, err.message);
+
+          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            // iOS: user explicitly denied camera access — guide them to Settings.
+            setCameraError(
+              'Akses kamera ditolak. Buka Pengaturan › Safari › Kamera dan pilih "Izinkan", lalu muat ulang halaman ini.'
+            );
+          } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+            setCameraError('Kamera tidak ditemukan pada perangkat ini. Gunakan input kode tiket manual di bawah.');
+          } else if (err.name === 'NotSupportedError' || err.name === 'SecurityError') {
+            // Fired on iOS when the page is served over HTTP instead of HTTPS.
+            setCameraError(
+              'Kamera hanya dapat diakses melalui koneksi HTTPS. Pastikan aplikasi dibuka dengan https://'
+            );
+          } else {
+            setCameraError('Gagal mengakses kamera. Gunakan input kode tiket manual di bawah.');
+          }
         }
       };
       
@@ -173,12 +202,17 @@ export default function MillAdminScreen() {
               }}>
                 {!cameraError ? (
                   <>
-                    <video 
-                      ref={videoRef} 
-                      playsInline 
-                      autoPlay 
-                      muted 
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                    {/* playsInline — required on iOS to prevent fullscreen takeover.
+                        webkit-playsinline — for older iOS WebKit (<10).
+                        muted — required for autoplay to work without user gesture on iOS.
+                        autoPlay — starts playback automatically once srcObject is set. */}
+                    <video
+                      ref={videoRef}
+                      playsInline
+                      autoPlay
+                      muted
+                      {...{ 'webkit-playsinline': 'true' }}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                     <div style={{ position: 'absolute', top: '10%', left: 0, right: 0, height: 2, background: 'rgba(163,212,137,0.8)', boxShadow: '0 0 10px var(--color-primary)', animation: 'scan 2s infinite linear' }} />
                   </>

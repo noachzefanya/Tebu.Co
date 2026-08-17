@@ -48,11 +48,28 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
 
   const fetchPlots = async () => {
     try {
-      const { data, error } = await supabase.from('sugarcane_plots').select('*').eq('farmer_id', user.id);
+      // Try canonical table name first, fall back to legacy name
+      let { data, error } = await supabase
+        .from('plots')
+        .select('*')
+        .eq('farmer_id', user.id);
+
+      if (error?.code === '42P01') {
+        // Table 'plots' does not exist — try legacy table
+        console.warn('[PlotHarvestModal] Table "plots" not found, falling back to "sugarcane_plots"');
+        ({ data, error } = await supabase
+          .from('sugarcane_plots')
+          .select('*')
+          .eq('farmer_id', user.id));
+      }
+
       if (error) throw error;
       setPlots(data || []);
       if (data?.length > 0) setSelectedPlot(data[0].id);
-    } catch (err) { console.error('Failed to fetch plots:', err); }
+    } catch (err) {
+      console.error('[PlotHarvestModal] Gagal memuat daftar petak sawah:', err);
+      setError('Gagal memuat daftar petak sawah. Periksa koneksi internet Anda.');
+    }
   };
 
   const fetchMills = async () => {
@@ -61,30 +78,67 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
       if (error) throw error;
       setSugarMills(data || []);
       if (data?.length > 0) setSelectedMill(data[0].id);
-    } catch (err) { console.error('Failed to fetch mills:', err); }
+    } catch (err) {
+      console.error('[PlotHarvestModal] Gagal memuat daftar pabrik gula:', err);
+      // Non-fatal — user can still proceed if they previously had mills loaded
+    }
   };
 
   const handleSavePlot = async (e) => {
     e.preventDefault();
-    if (!plotName || !area || !plantDate || !estTonnage) { setError('Harap lengkapi semua data lahan.'); return; }
+    if (!plotName || !area || !plantDate || !estTonnage) {
+      setError('Harap lengkapi semua data lahan: Nama Petak, Luas, Tanggal Tanam, dan Estimasi Tonase.');
+      return;
+    }
     setLoading(true); setError(''); setSuccess('');
+
     try {
       if (user.isDemo || !isSupabaseConfigured) {
+        // ── Demo / offline mode ──────────────────────────────────────────────
         await new Promise(r => setTimeout(r, 600));
-        setPlots([...plots, { id: Date.now(), plot_name: plotName }]);
+        setPlots(prev => [...prev, { id: Date.now(), plot_name: plotName }]);
         setSuccess('Lahan berhasil didaftarkan (Mode Demo).');
       } else {
-        const { error: insertError } = await supabase.from('sugarcane_plots').insert([{
-          farmer_id: user.id, plot_name: plotName, area_ha: parseFloat(area),
-          variety, plant_date: plantDate, est_tonnage: parseFloat(estTonnage)
-        }]);
-        if (insertError) throw insertError;
-        setSuccess('Lahan berhasil didaftarkan.');
+        // ── Live Supabase mode ───────────────────────────────────────────────
+        const plotPayload = {
+          farmer_id:  user.id,
+          plot_name:  plotName.trim(),
+          area_ha:    parseFloat(area),
+          variety,
+          plant_date: plantDate,
+          est_tonnage: parseFloat(estTonnage),
+        };
+
+        // Try canonical table 'plots' first
+        let insertError;
+        const { error: e1 } = await supabase.from('plots').insert([plotPayload]);
+        insertError = e1;
+
+        if (e1?.code === '42P01') {
+          // Fallback to legacy table name
+          console.warn('[PlotHarvestModal] Tabel "plots" tidak ditemukan, menggunakan "sugarcane_plots"');
+          const { error: e2 } = await supabase.from('sugarcane_plots').insert([plotPayload]);
+          insertError = e2;
+        }
+
+        if (insertError) {
+          console.error('[PlotHarvestModal] Gagal menyimpan petak sawah:', insertError);
+          throw new Error(`Gagal menyimpan data lahan: ${insertError.message}`);
+        }
+
+        console.log('[PlotHarvestModal] Petak sawah berhasil disimpan:', plotPayload);
+        setSuccess('Lahan berhasil didaftarkan dan disimpan ke database.');
         fetchPlots();
       }
+
       setPlotName(''); setArea(''); setEstTonnage('');
       setTimeout(() => { setSuccess(''); setActiveTab('harvest'); }, 1500);
-    } catch (err) { setError(err.message); } finally { setLoading(false); }
+    } catch (err) {
+      console.error('[PlotHarvestModal] handleSavePlot error:', err);
+      setError(err.message || 'Terjadi kesalahan. Coba lagi beberapa saat.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleTruckCountChange = (delta) => {
@@ -107,72 +161,138 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
   const handleSaveHarvest = async (e) => {
     e.preventDefault();
     if (!selectedPlot || !selectedMill || !harvestTime || !totalLoadTonnage) {
-      setError('Harap lengkapi data utama (Petak Kebun, PG, Waktu Tebang, Total Tonase).'); return;
+      setError('Harap lengkapi data utama: Petak Kebun, Pabrik Gula, Waktu Tebang, dan Total Tonase.'); return;
     }
     const estWeightPerTruck = (Number(totalLoadTonnage) / Number(truckCount)).toFixed(1);
 
     for (let i = 0; i < trucks.length; i++) {
       if (!trucks[i].plate || !trucks[i].driver) {
-        setError(`Data Armada Truk ${i + 1} belum lengkap (Nomor Polisi, Nama Sopir).`); return;
+        setError(`Data Armada Truk ${i + 1} belum lengkap (Nomor Polisi dan Nama Sopir wajib diisi).`); return;
       }
     }
+
     setLoading(true); setError('');
+
     try {
       const mill = sugarMills.find(m => m.id === selectedMill);
       const interval = mill?.slot_interval_minutes || 15;
-      const batchPayload = {
-        farmer_id: user.id, plot_id: selectedPlot, mill_id: selectedMill,
-        harvest_time: new Date(harvestTime).toISOString(),
-        total_tonnage: parseFloat(totalLoadTonnage), truck_count: truckCount,
-      };
-      let batchId = 'demo-batch-' + Date.now();
-      if (!user.isDemo && isSupabaseConfigured) {
-        try {
-          const { data: batchData, error: batchError } = await supabase
-            .from('harvest_batches').insert([batchPayload]).select().single();
-          if (batchError) throw batchError;
-          batchId = batchData.id;
-        } catch (e) {
-          console.warn('Fallback to local mode for batch insertion:', e);
-        }
-      } else { await new Promise(r => setTimeout(r, 600)); }
 
-      const baseHarvestTimeMs  = new Date(harvestTime).getTime();
+      // ── 1. Insert into harvest_records ──────────────────────────────────────
+      const harvestPayload = {
+        farmer_id:      user.id,
+        plot_id:        selectedPlot,
+        mill_id:        selectedMill,
+        harvest_time:   new Date(harvestTime).toISOString(),
+        total_tonnage:  parseFloat(totalLoadTonnage),
+        truck_count:    truckCount,
+        status:         'pending',
+      };
+
+      let harvestId = `demo-harvest-${Date.now()}`;
+
+      if (!user.isDemo && isSupabaseConfigured) {
+        // Try canonical table 'harvest_records'
+        let hrError;
+        let hrData;
+
+        const { data: d1, error: e1 } = await supabase
+          .from('harvest_records')
+          .insert([harvestPayload])
+          .select()
+          .single();
+        hrError = e1; hrData = d1;
+
+        if (e1?.code === '42P01') {
+          // Fallback to legacy table
+          console.warn('[PlotHarvestModal] Tabel "harvest_records" tidak ditemukan, menggunakan "harvest_batches"');
+          const { data: d2, error: e2 } = await supabase
+            .from('harvest_batches')
+            .insert([harvestPayload])
+            .select()
+            .single();
+          hrError = e2; hrData = d2;
+        }
+
+        if (hrError) {
+          console.error('[PlotHarvestModal] Gagal menyimpan data panen:', hrError);
+          throw new Error(`Gagal menyimpan data panen: ${hrError.message}`);
+        }
+
+        harvestId = hrData?.id || harvestId;
+        console.log('[PlotHarvestModal] Data panen berhasil disimpan. ID:', harvestId);
+      } else {
+        await new Promise(r => setTimeout(r, 600)); // Demo delay
+      }
+
+      // ── 2. Build SPTA tickets ───────────────────────────────────────────────
+      const baseHarvestTimeMs     = new Date(harvestTime).getTime();
       const travelDurationMinutes = 45;
-      const dispatches = trucks.map((t, idx) => {
+
+      const ticketRows = trucks.map((t, idx) => {
         const slotMs      = baseHarvestTimeMs + (idx * interval * 60000);
         const departureMs = slotMs - (travelDurationMinutes * 60000);
+        const sptaCode    = `TEBUCO-SPTA-${Date.now().toString().slice(-6)}-${t.plate.replace(/\s+/g, '')}`;
+
         return {
-          batch_id: batchId, plate_number: t.plate, driver_name: t.driver,
-          tonnage: parseFloat(estWeightPerTruck), status: 'queued',
-          harvest_time: new Date(harvestTime).toISOString(),
+          harvest_id:     harvestId,
+          // keep backward compat keys for local state
+          batch_id:       harvestId,
+          plate_number:   t.plate,
+          driver_name:    t.driver,
+          tonnage:        parseFloat(estWeightPerTruck),
+          status:         'queued',
+          harvest_time:   new Date(harvestTime).toISOString(),
           scheduled_slot: new Date(slotMs).toISOString(),
           departure_time: new Date(departureMs).toISOString(),
-          brix: 14.2,
+          brix:           14.2,
+          spta_code:      sptaCode,
+          // legacy key used by TicketScreen for display
+          spta_ticket:    sptaCode,
         };
       });
 
+      // ── 3. Insert into spta_tickets ─────────────────────────────────────────
       if (!user.isDemo && isSupabaseConfigured) {
-        try {
-          const { error: dispatchError } = await supabase.from('truck_dispatches').insert(dispatches);
-          if (dispatchError) throw dispatchError;
-        } catch (e) {
-          console.warn('Fallback to local mode for dispatches insertion:', e);
+        // DB columns don't include the local-only alias keys — strip them
+        const dbTickets = ticketRows.map(({ batch_id, spta_ticket, ...rest }) => rest);
+
+        let stError;
+        const { error: e1 } = await supabase.from('spta_tickets').insert(dbTickets);
+        stError = e1;
+
+        if (e1?.code === '42P01') {
+          console.warn('[PlotHarvestModal] Tabel "spta_tickets" tidak ditemukan, menggunakan "truck_dispatches"');
+          // Fallback: build legacy shape
+          const legacyRows = ticketRows.map(({ harvest_id, spta_code, ...rest }) => ({
+            ...rest,
+            batch_id: harvestId,
+          }));
+          const { error: e2 } = await supabase.from('truck_dispatches').insert(legacyRows);
+          stError = e2;
+        }
+
+        if (stError) {
+          // Non-fatal: tiket tetap dibuat secara lokal
+          console.warn('[PlotHarvestModal] Gagal menyimpan tiket SPTA ke database (lanjut mode lokal):', stError.message);
+        } else {
+          console.log(`[PlotHarvestModal] ${ticketRows.length} tiket SPTA berhasil disimpan.`);
         }
       }
 
-      const dispatchesWithTickets = dispatches.map(d => ({
-        ...d,
-        spta_ticket: `TEBUCO-SPTA-${Date.now().toString().slice(-6)}-${d.plate_number.replace(/\s+/g, '')}`
-      }));
-
+      // ── 4. Update local app state ───────────────────────────────────────────
       onHarvestLogged({
-        ...dispatchesWithTickets[0],
-        plot_id: selectedPlot,
-        batch_trucks: dispatchesWithTickets,
+        ...ticketRows[0],
+        plot_id:      selectedPlot,
+        batch_trucks: ticketRows,
       });
       onClose();
-    } catch (err) { setError(err.message); } finally { setLoading(false); }
+
+    } catch (err) {
+      console.error('[PlotHarvestModal] handleSaveHarvest error:', err);
+      setError(err.message || 'Terjadi kesalahan saat menyimpan data panen. Coba lagi.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen) return null;

@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Camera, ShieldCheck, Scale, QrCode, Clock, MapPin, Truck, Share2, PlusCircle } from 'lucide-react';
+import { ShieldCheck, QrCode, Clock, MapPin, Share2, PlusCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import QRScannerModal from './QRScannerModal.jsx';
 
 export default function TicketScreen({ active, activeSpta, onOpenHarvestModal }) {
-  const [scannerOpen, setScannerOpen] = useState(false);
   const [selectedTruckIndex, setSelectedTruckIndex] = useState(0);
 
   // Reset index when batch changes
@@ -228,19 +226,8 @@ export default function TicketScreen({ active, activeSpta, onOpenHarvestModal })
             </div>
           )}
 
-          <button
-            id="btn-open-scanner"
-            className="btn-ghost"
-            style={{ flexShrink: 0, marginTop: 8 }}
-            onClick={() => setScannerOpen(true)}
-          >
-            <Camera size={20} />
-            Pindai & Verifikasi Tiket SPTA
-          </button>
         </div>
       </div>
-
-      <QRScannerModal isOpen={scannerOpen} onClose={() => setScannerOpen(false)} />
 
       <style>{`
         .hide-scrollbar::-webkit-scrollbar {

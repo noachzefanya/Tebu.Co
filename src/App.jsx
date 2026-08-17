@@ -1,43 +1,81 @@
-import { useState, useEffect } from 'react';
-import { LogOut } from 'lucide-react';
-import HomeScreen    from './components/HomeScreen.jsx';
-import GrowthScreen  from './components/GrowthScreen.jsx';
-import MappingScreen from './components/MappingScreen.jsx';
-import TruckScreen   from './components/TruckScreen.jsx';
-import TicketScreen  from './components/TicketScreen.jsx';
-import BottomNav     from './components/BottomNav.jsx';
-import AuthScreen    from './components/AuthScreen.jsx';
+import { useState, useEffect, useCallback } from 'react';
+import { LogOut, ShieldCheck, Sprout } from 'lucide-react';
+import { supabase } from './lib/supabaseClient.js';
+import { fetchUserProfile, logoutUser } from './services/authService.js';
+
+import HomeScreen     from './components/HomeScreen.jsx';
+import GrowthScreen   from './components/GrowthScreen.jsx';
+import MappingScreen  from './components/MappingScreen.jsx';
+import TruckScreen    from './components/TruckScreen.jsx';
+import TicketScreen   from './components/TicketScreen.jsx';
+import BottomNav      from './components/BottomNav.jsx';
+import AuthScreen     from './components/AuthScreen.jsx';
 import MillAdminScreen from './components/MillAdminScreen.jsx';
 import NotificationBanner from './components/NotificationBanner.jsx';
-// Background imagery (from original design)
+
+// Background imagery
 const BG_FIELD =
   'https://lh3.googleusercontent.com/aida-public/AB6AXuA99hR2uXthly6O-tAw-wRgxvZGLPMyQxqr1KSSzs2H2eS3J2Ze3dITK0fwzfnOP9setRpLD48NgqUmQAt2vp6vt1sUqJADkpNee7x3Sw588tprFdFScviS8tz_vRTR82mahTvuqwITZ0v6a3iYs9sziEqnbWg_DzCc1xaf4DBLJJhzewWJyczhrNcQ59Zm6v8wWYfakKGOCqWmd9RcDSu4H9ZXoAd32LIGvKZgY6UBRY0kb6nDdbL4hQ';
 
-const AVATAR_URL =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuAfmqyEzn8hmUoxWZNE2j7fUTr9nPhlocAA-1PX231O4XoaIPBEBOMROsKfX2Im5LaZ_hp1EA2pclWYVkcF17Z73UPtZ3cnmn0R0A1tDUcjf_Yl9CWmozP3UgsYUDyRPb8p8TtlRmn6Z94jLRADxMlhDunGuvbom55cwemkEexserV-JBMp197OF3BqrFWZRE4qhzyYxHhoIlMJRkzqYlF-VGBbKOXtznHRBUW1qUg2UY1ybWZoGH1ByA';
-
-
-
 export default function App() {
-  const [activeTab, setActiveTab] = useState('home');
-  const [user, setUser] = useState(null);
-  const [appRole, setAppRole] = useState('farmer'); // 'farmer' | 'admin'
-  const [activeSpta, setActiveSpta] = useState(null);
+  const [activeTab, setActiveTab]           = useState('home');
+  const [session, setSession]               = useState(undefined); // undefined = loading, null = not logged in
+  const [profile, setProfile]               = useState(null);
+  const [activeSpta, setActiveSpta]         = useState(null);
   const [isHarvestModalOpen, setIsHarvestModalOpen] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
 
-  useEffect(() => {
-    const savedUser = localStorage.getItem('tebuco_farmer_user');
-    if (savedUser) setUser(JSON.parse(savedUser));
-    
-    const savedSpta = localStorage.getItem('tebuco_active_spta');
-    if (savedSpta) setActiveSpta(JSON.parse(savedSpta));
+  // ── Load profile from Supabase ──────────────────────────────────────────────
+  const loadProfile = useCallback(async (userId) => {
+    setProfileLoading(true);
+    try {
+      const p = await fetchUserProfile(userId);
+      setProfile(p);
+    } catch (err) {
+      console.error('[App] loadProfile error:', err);
+      setProfile(null);
+    } finally {
+      setProfileLoading(false);
+    }
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('tebuco_farmer_user');
+  // ── Auth state listener ────────────────────────────────────────────────────
+  useEffect(() => {
+    // Get the current session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) loadProfile(session.user.id);
+    });
+
+    // Listen for future auth changes (login, logout, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, newSession) => {
+        setSession(newSession);
+        if (newSession?.user) {
+          loadProfile(newSession.user.id);
+        } else {
+          setProfile(null);
+          setActiveSpta(null);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, [loadProfile]);
+
+  // ── Restore active SPTA from localStorage on mount ─────────────────────────
+  useEffect(() => {
+    const saved = localStorage.getItem('tebuco_active_spta');
+    if (saved) {
+      try { setActiveSpta(JSON.parse(saved)); } catch { /* ignore */ }
+    }
+  }, []);
+
+  // ── Handlers ───────────────────────────────────────────────────────────────
+  const handleLogout = async () => {
+    await logoutUser();
     localStorage.removeItem('tebuco_active_spta');
-    setUser(null);
-    setActiveSpta(null);
+    // onAuthStateChange will clear session + profile automatically
   };
 
   const handleSetSpta = (sptaData) => {
@@ -45,13 +83,94 @@ export default function App() {
     localStorage.setItem('tebuco_active_spta', JSON.stringify(sptaData));
   };
 
-  if (!user) {
-    return <AuthScreen onLogin={setUser} />;
+  // Called by AuthScreen after a successful loginWithPhone / signUp
+  // — the onAuthStateChange listener will pick it up automatically,
+  //   but this gives the screen an immediate "something happened" signal.
+  const handleAuthSuccess = () => {
+    // No-op: the onAuthStateChange callback handles state updates.
+    // This prop exists so AuthScreen has a callback to call on success.
+  };
+
+  // ── Render: loading splash ──────────────────────────────────────────────────
+  if (session === undefined || (session && profileLoading && !profile)) {
+    return (
+      <div
+        style={{
+          width: '100%', height: '100%',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          background: '#050505', gap: 16,
+        }}
+      >
+        <h1
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 32, fontWeight: 900,
+            color: 'var(--color-primary)',
+            letterSpacing: '-1px',
+            textShadow: '0 0 24px rgba(163,212,137,0.4)',
+          }}
+        >
+          Tebu.Co
+        </h1>
+        <div
+          style={{
+            width: 28, height: 28, borderRadius: '50%',
+            border: '3px solid rgba(163,212,137,0.2)',
+            borderTopColor: 'var(--color-primary)',
+            animation: 'spin 0.8s linear infinite',
+          }}
+        />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
   }
 
+  // ── Render: not logged in ──────────────────────────────────────────────────
+  if (!session) {
+    return (
+      <div style={{ width: '100%', height: '100%', position: 'relative', background: '#050505', overflow: 'hidden' }}>
+        {/* Blurred field background on auth screen */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute', inset: 0,
+            backgroundImage: `url('${BG_FIELD}')`,
+            backgroundSize: 'cover', backgroundPosition: 'center',
+            opacity: 0.4,
+          }}
+        />
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute', inset: 0,
+            background: 'rgba(0,0,0,0.72)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+          }}
+        />
+        <div style={{ position: 'relative', zIndex: 10, width: '100%', height: '100%', overflowY: 'auto' }}>
+          <AuthScreen onLogin={handleAuthSuccess} />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Derive role from profile ────────────────────────────────────────────────
+  // Fallback to 'petani' if profile not loaded yet to avoid blank screen
+  const role = profile?.role || 'petani';
+  const isAdmin = role === 'admin_pg';
+  const displayName = profile?.full_name || session.user?.user_metadata?.full_name || 'Pengguna';
+
+  // ── Role badge config ───────────────────────────────────────────────────────
+  const roleBadge = isAdmin
+    ? { label: 'PETUGAS PG', icon: <ShieldCheck size={12} />, color: 'var(--color-tertiary)', bg: 'rgba(166,214,79,0.12)', border: 'rgba(166,214,79,0.3)' }
+    : { label: 'PETANI',     icon: <Sprout size={12} />,      color: 'var(--color-primary)',   bg: 'rgba(163,212,137,0.1)', border: 'rgba(163,212,137,0.25)' };
+
+  // ── Render: app shell ──────────────────────────────────────────────────────
   return (
     <div
-      className={appRole === 'admin' ? 'app-container admin-mode' : 'app-container farmer-mode'}
+      className={isAdmin ? 'app-container admin-mode' : 'app-container farmer-mode'}
       style={{
         background: '#050505',
         overflow: 'hidden',
@@ -116,27 +235,20 @@ export default function App() {
           height: 64,
         }}
       >
+        {/* ── Left: avatar + brand + name ── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div
             style={{
-              width: 32, height: 32, borderRadius: '50%',
-              overflow: 'hidden', border: '1px solid rgba(255,255,255,0.2)',
-              background: 'var(--color-surface-container)',
+              width: 34, height: 34, borderRadius: '50%',
+              background: 'linear-gradient(135deg, rgba(163,212,137,0.25), rgba(166,214,79,0.15))',
+              border: '1.5px solid rgba(163,212,137,0.4)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
             }}
           >
-            {user.isDemo ? (
-              <img
-                src={AVATAR_URL}
-                alt="Avatar"
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            ) : (
-              <span style={{ color: 'var(--color-tertiary)', fontWeight: 700, fontSize: 14 }}>
-                {user.full_name.charAt(0).toUpperCase()}
-              </span>
-            )}
+            <span style={{ color: 'var(--color-primary)', fontWeight: 800, fontSize: 14 }}>
+              {displayName.charAt(0).toUpperCase()}
+            </span>
           </div>
           <div>
             <h1
@@ -147,82 +259,89 @@ export default function App() {
             >
               Tebu.Co
             </h1>
-            <p className="text-caps c-on-surface-var" style={{ fontSize: 9 }}>
-              {user.full_name}
+            <p className="text-caps c-on-surface-var" style={{ fontSize: 9, lineHeight: 1.2 }}>
+              {displayName}
             </p>
           </div>
         </div>
 
-        <div
-          className="text-caps c-on-surface-var"
-          style={{ display: 'flex', alignItems: 'center', gap: 12 }}
-        >
-          {/* Role Switcher Toggle */}
-          <button
-            onClick={() => setAppRole(prev => prev === 'farmer' ? 'admin' : 'farmer')}
+        {/* ── Right: role badge + logout ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Role badge — read-only, no click handler */}
+          <div
             style={{
-              background: appRole === 'admin' ? 'rgba(163,212,137,0.1)' : 'rgba(255,255,255,0.05)',
-              border: `1px solid ${appRole === 'admin' ? 'var(--color-primary)' : 'rgba(255,255,255,0.2)'}`,
-              color: appRole === 'admin' ? 'var(--color-primary)' : 'var(--color-on-surface-variant)',
-              padding: '6px 12px', borderRadius: 20, fontSize: 10, fontWeight: 700, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.2s'
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '5px 10px', borderRadius: 20,
+              background: roleBadge.bg,
+              border: `1px solid ${roleBadge.border}`,
+              color: roleBadge.color,
+              fontSize: 10, fontFamily: 'var(--font-display)', fontWeight: 700,
+              letterSpacing: '0.05em',
+              userSelect: 'none',
             }}
+            aria-label={`Role: ${roleBadge.label}`}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-              {appRole === 'admin' ? 'admin_panel_settings' : 'agriculture'}
-            </span>
-            {appRole === 'admin' ? 'MODE PETUGAS PG' : 'MODE PETANI'}
-          </button>
-
-          <div style={{ alignItems: 'center', gap: 4, display: 'none' }}>
-            {/* Hiding weather to make space for the toggle */}
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>wb_sunny</span>
-            28°C
+            {roleBadge.icon}
+            {roleBadge.label}
           </div>
+
+          {/* Logout */}
           <button
+            id="btn-logout"
             onClick={handleLogout}
+            title="Keluar dari akun"
             style={{
-              background: 'rgba(255,180,171,0.1)', border: 'none', borderRadius: 8,
-              width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(255,180,171,0.1)',
+              border: '1px solid rgba(255,180,171,0.2)',
+              borderRadius: 8,
+              width: 32, height: 32,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: 'var(--color-error)', cursor: 'pointer',
+              transition: 'background 0.2s',
             }}
-            title="Keluar"
+            onMouseOver={(e) => (e.currentTarget.style.background = 'rgba(255,100,80,0.2)')}
+            onMouseOut={(e)  => (e.currentTarget.style.background = 'rgba(255,180,171,0.1)')}
           >
-            <LogOut size={14} />
+            <LogOut size={15} />
           </button>
         </div>
       </header>
 
-      {/* Global Notification Banner */}
-      {appRole === 'farmer' && <NotificationBanner activeSpta={activeSpta} />}
+      {/* ── Farmer: global SPTA notification banner ── */}
+      {!isAdmin && <NotificationBanner activeSpta={activeSpta} />}
 
       {/* ── Content Canvas ── */}
-      <main className="no-scrollbar touch-scroll" style={{ 
-        position: 'relative', flex: 1, width: '100%', zIndex: 10,
-        minHeight: 0,           /* CRITICAL: allows flex child to shrink and scroll */
-        display: 'flex', flexDirection: 'column', 
-        overflowY: 'auto', overscrollBehavior: 'contain',
-        touchAction: 'pan-y',
-      }}>
-        {appRole === 'admin' ? (
-          <MillAdminScreen />
+      <main
+        className="no-scrollbar touch-scroll"
+        style={{
+          position: 'relative', flex: 1, width: '100%', zIndex: 10,
+          minHeight: 0,
+          display: 'flex', flexDirection: 'column',
+          overflowY: 'auto', overscrollBehavior: 'contain',
+          touchAction: 'pan-y',
+        }}
+      >
+        {isAdmin ? (
+          /* ── Admin PG: Mill dashboard + live QR scanner ── */
+          <MillAdminScreen profile={profile} />
         ) : (
+          /* ── Petani: Farm management screens ── */
           <>
             <HomeScreen
               active={activeTab === 'home'}
-          user={user}
-          activeSpta={activeSpta}
-          onHarvestLogged={handleSetSpta}
-          onGenerateSPTA={() => setActiveTab('ticket')}
-          isModalOpen={isHarvestModalOpen}
-          setIsModalOpen={setIsHarvestModalOpen}
-        />
-        <GrowthScreen  active={activeTab === 'growth'}  />
-        <MappingScreen active={activeTab === 'mapping'} />
-        <TruckScreen   active={activeTab === 'truck'}   />
-            <TicketScreen  
-              active={activeTab === 'ticket'} 
-              activeSpta={activeSpta} 
+              user={profile}
+              activeSpta={activeSpta}
+              onHarvestLogged={handleSetSpta}
+              onGenerateSPTA={() => setActiveTab('ticket')}
+              isModalOpen={isHarvestModalOpen}
+              setIsModalOpen={setIsHarvestModalOpen}
+            />
+            <GrowthScreen  active={activeTab === 'growth'}  />
+            <MappingScreen active={activeTab === 'mapping'} />
+            <TruckScreen   active={activeTab === 'truck'}   />
+            <TicketScreen
+              active={activeTab === 'ticket'}
+              activeSpta={activeSpta}
               onOpenHarvestModal={() => {
                 setActiveTab('home');
                 setIsHarvestModalOpen(true);
@@ -232,8 +351,10 @@ export default function App() {
         )}
       </main>
 
-      {/* ── Bottom Navigation ── */}
-      {appRole === 'farmer' && !isHarvestModalOpen && <BottomNav activeTab={activeTab} onChange={setActiveTab} />}
+      {/* ── Bottom Navigation — petani only, hidden when modal is open ── */}
+      {!isAdmin && !isHarvestModalOpen && (
+        <BottomNav activeTab={activeTab} onChange={setActiveTab} />
+      )}
     </div>
   );
 }
