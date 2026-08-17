@@ -279,66 +279,58 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
   if (!isOpen) return null;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+    <div 
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm"
       style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="relative w-full max-w-sm sm:max-w-md max-h-[85vh] flex flex-col bg-[#161d18] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden">
-
-        {/* Header & Tabs */}
-        <div className="shrink-0 p-4 pb-3 border-b border-gray-800/60 bg-[#161d18] z-10">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>
-              Registrasi Petak Lahan & Panen
-            </h3>
-            <button
-              onClick={onClose}
-              style={{
-                width: 34, height: 34, borderRadius: '50%',
-                background: 'rgba(255,255,255,0.08)', border: 'none',
-                color: '#aaa', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
+      {/* Kartu Popup di Tengah Layar */}
+      <div 
+        className="relative w-full max-w-sm sm:max-w-md max-h-[85dvh] flex flex-col bg-[#121814] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* 1. HEADER & TAB: Diam di atas (tidak ikut scroll) */}
+        <div className="shrink-0 p-4 pb-3 border-b border-gray-800 bg-[#121814] z-10">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-base font-bold text-white">Registrasi Petak Lahan & Panen</h3>
+            <button 
+              type="button" 
+              onClick={onClose} 
+              className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-gray-300 hover:text-white"
             >
-              <X size={18} />
+              ✕
             </button>
           </div>
-
-          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 4, gap: 4 }}>
-            <button
+          <div className="flex bg-black/40 p-1 rounded-xl border border-gray-800 gap-1">
+            <button 
+              type="button"
               onClick={() => { setError(''); setSuccess(''); setActiveTab('plot'); }}
-              style={{
-                flex: 1, padding: '10px 6px', borderRadius: 10, border: 'none',
-                background: activeTab === 'plot' ? 'rgba(255,255,255,0.15)' : 'transparent',
-                color: activeTab === 'plot' ? '#fff' : '#888', fontWeight: 700, fontSize: 12, cursor: 'pointer'
-              }}
+              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors ${
+                activeTab === 'plot' ? 'bg-[#253328] text-lime-400' : 'text-gray-400 hover:text-white'
+              }`}
             >
               Daftar Sawah
             </button>
-            <button
+            <button 
+              type="button"
               onClick={() => { setError(''); setSuccess(''); setActiveTab('harvest'); }}
-              style={{
-                flex: 1, padding: '10px 6px', borderRadius: 10, border: 'none',
-                background: activeTab === 'harvest' ? 'var(--color-tertiary, #a6d64f)' : 'transparent',
-                color: activeTab === 'harvest' ? '#1b2f00' : '#888', fontWeight: 700, fontSize: 12, cursor: 'pointer'
-              }}
+              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors ${
+                activeTab === 'harvest' ? 'bg-lime-500 text-black' : 'text-gray-400 hover:text-white'
+              }`}
             >
               Input Panen & Armada
             </button>
           </div>
-
           {(error || success) && (
-            <div style={{ marginTop: 12 }}>
-              {error && <div style={{ background: 'rgba(255,100,80,0.15)', padding: '10px 14px', borderRadius: 10, color: '#ff8a7a', fontSize: 13, border: '1px solid rgba(255,100,80,0.3)' }}>{error}</div>}
-              {success && <div style={{ background: 'rgba(166,214,79,0.15)', padding: '10px 14px', borderRadius: 10, color: '#a6d64f', fontSize: 13, border: '1px solid rgba(166,214,79,0.3)' }}>{success}</div>}
+            <div className="mt-3">
+              {error && <div className="p-2.5 rounded-lg bg-red-950/60 border border-red-800/50 text-red-300 text-xs">{error}</div>}
+              {success && <div className="p-2.5 rounded-lg bg-lime-950/60 border border-lime-800/50 text-lime-300 text-xs">{success}</div>}
             </div>
           )}
         </div>
 
-        {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+        {/* 2. BODY FORM: Tempat scroll dinamis */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#121814]" style={{ WebkitOverflowScrolling: 'touch' }}>
           {activeTab === 'plot' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
@@ -412,15 +404,15 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 <label style={{ fontSize: 10, color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Jumlah Armada Truk</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.05)', padding: '8px 16px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
-                  <button type="button" onClick={() => handleTruckCountChange(-1)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', width: 32, height: 32, borderRadius: 8, cursor: 'pointer' }}><Minus size={16} /></button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#1a221c', padding: '8px 16px', borderRadius: 12, border: '1px solid #374151' }}>
+                  <button type="button" onClick={() => handleTruckCountChange(-1)} style={{ background: '#374151', border: 'none', color: '#fff', width: 32, height: 32, borderRadius: 8, cursor: 'pointer' }}><Minus size={16} /></button>
                   <span style={{ color: '#fff', fontWeight: 800, flex: 1, textAlign: 'center', fontSize: 15 }}>{truckCount} Armada Truk</span>
-                  <button type="button" onClick={() => handleTruckCountChange(1)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', width: 32, height: 32, borderRadius: 8, cursor: 'pointer' }}><Plus size={16} /></button>
+                  <button type="button" onClick={() => handleTruckCountChange(1)} style={{ background: '#374151', border: 'none', color: '#fff', width: 32, height: 32, borderRadius: 8, cursor: 'pointer' }}><Plus size={16} /></button>
                 </div>
               </div>
 
               {trucks.map((truck, idx) => (
-                <div key={idx} style={{ background: 'rgba(0,0,0,0.3)', padding: 12, borderRadius: 12, border: '1px solid rgba(166,214,79,0.2)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div key={idx} style={{ background: '#1a221c', padding: 12, borderRadius: 12, border: '1px solid #374151', display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <Truck size={14} color="#a6d64f" />
                     <span style={{ color: '#a6d64f', fontSize: 11, fontWeight: 800, textTransform: 'uppercase' }}>Armada Truk Ke-{idx + 1}</span>
@@ -435,28 +427,23 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
           )}
         </div>
 
-        {/* Fixed Footer */}
-        <div className="shrink-0 p-4 pt-3 border-t border-gray-800/60 bg-[#161d18] z-10 flex gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            style={{ flex: 1, height: 48, borderRadius: 12, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#bbb', fontWeight: 600, cursor: 'pointer' }}
+        {/* 3. FOOTER: Diam di bawah (selalu tampak dan bisa diklik) */}
+        <div className="shrink-0 p-4 pt-3 border-t border-gray-800 bg-[#121814] z-10 flex gap-3">
+          <button 
+            type="button" 
+            onClick={onClose} 
+            className="flex-1 py-3 rounded-xl bg-white/5 border border-gray-700 text-gray-300 text-sm font-semibold hover:bg-white/10"
           >
             Batal
           </button>
-          <button
-            type="button"
+          <button 
+            type="button" 
             onClick={activeTab === 'plot' ? handleSavePlot : handleSaveHarvest}
             disabled={loading}
-            style={{
-              flex: 2, height: 48, borderRadius: 12, border: 'none',
-              background: activeTab === 'plot' ? '#253328' : '#a6d64f',
-              color: activeTab === 'plot' ? '#a6d64f' : '#1b2f00',
-              fontWeight: 800, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, cursor: loading ? 'default' : 'pointer'
-            }}
+            className="flex-[2] py-3 rounded-xl bg-lime-500 text-black text-sm font-bold flex items-center justify-center gap-2 hover:bg-lime-400 disabled:opacity-50"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : (activeTab === 'plot' ? <Save size={16} /> : <QrCode size={16} />)}
-            {activeTab === 'plot' ? 'Simpan Petak Sawah' : `Terbitkan SPTA (${truckCount} Truk)`}
+            {loading ? 'Menyimpan...' : (activeTab === 'plot' ? 'Simpan Petak Sawah' : `Terbitkan SPTA (${truckCount} Truk)`)}
           </button>
         </div>
       </div>
@@ -466,12 +453,12 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
 
 const inputStyle = {
   width: '100%', height: 48, padding: '0 12px 0 38px',
-  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+  background: '#1a221c', border: '1px solid #374151',
   borderRadius: 10, color: '#fff', outline: 'none', fontSize: 14,
 };
 
 const selectStyle = {
   width: '100%', height: 48, padding: '0 12px',
-  background: '#1a241c', border: '1px solid rgba(255,255,255,0.1)',
+  background: '#1a221c', border: '1px solid #374151',
   borderRadius: 10, color: '#fff', outline: 'none', fontSize: 14,
 };
