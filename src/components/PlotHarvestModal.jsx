@@ -317,15 +317,15 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm"
       style={{ animation: 'fadeInOverlay 0.2s ease' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       {/* ── Modal Card Container ── */}
-      <div className="w-full max-w-lg max-h-[88dvh] flex flex-col bg-[#161d18] border border-gray-800 rounded-2xl overflow-hidden">
+      <div className="relative w-full max-w-lg max-h-[82dvh] sm:max-h-[85dvh] flex flex-col bg-[#161d18] border border-gray-800/80 rounded-2xl shadow-2xl overflow-hidden">
         
-        {/* ── Sticky Header & Tabs ── */}
-        <div className="shrink-0 p-4 border-b border-gray-800/60 bg-[#161d18] z-10">
+        {/* ── Fixed Header & Mode Tabs ── */}
+        <div className="shrink-0 p-4 pb-3 border-b border-gray-800/60 bg-[#161d18] z-10">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>
               Registrasi Petak Lahan & Panen
@@ -365,8 +365,9 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
 
         {/* ── Scrollable Form Body ── */}
         <div
-          className="flex-1 overflow-y-auto p-4 space-y-4 overscroll-contain"
-          style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
+          className="flex-1 overflow-y-auto p-4 space-y-4 overscroll-contain touch-pan-y focus:outline-none"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+          tabIndex="-1"
         >
           {/* ── Tab A: Plot ── */}
           {activeTab === 'plot' && (
@@ -488,8 +489,8 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
           )}
         </div>
 
-        {/* ── Sticky Footer — CTA Buttons ── */}
-        <div className="shrink-0 p-4 bg-[#161d18] border-t border-gray-800/60 z-10 flex gap-3">
+        {/* ── Fixed Footer — CTA Buttons ── */}
+        <div className="shrink-0 p-4 pt-3 border-t border-gray-800/60 bg-[#161d18] z-10 flex gap-3">
           {/* Cancel */}
           <button
             type="button"
