@@ -104,15 +104,16 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
     setLoading(true); setError(''); setSuccess('');
 
     try {
-      if (user.isDemo || !isSupabaseConfigured) {
+      if (user?.isDemo || user?.id === 'demo-petani') {
         // ── Demo / offline mode ──────────────────────────────────────────────
         await new Promise(r => setTimeout(r, 600));
-        setPlots(prev => [...prev, { id: Date.now(), plot_name: plotName }]);
+        setPlots(prev => [...prev, { id: `mock-plot-${Date.now()}`, plot_name: plotName }]);
         setSuccess('Lahan berhasil didaftarkan (Mode Demo).');
       } else {
         // ── Live Supabase mode ───────────────────────────────────────────────
         const plotPayload = {
-          farmer_id:  user.id,
+          farmer_id:  user?.id,
+
           plot_name:  plotName.trim(),
           area_ha:    parseFloat(area),
           variety,
@@ -187,21 +188,21 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
     try {
       const mill = sugarMills.find(m => m.id === selectedMill);
       const interval = mill?.slot_interval_minutes || 15;
+      const millName = mill ? mill.name : '';
 
-      // ── 1. Insert into harvest_records ──────────────────────────────────────
+      // ── 1. Insert into harvest_records (or mock) ────────────────────────────
       const harvestPayload = {
-        farmer_id:      user.id,
+        farmer_id:      user?.id,
         plot_id:        selectedPlot,
-        mill_id:        selectedMill,
+        mill_name:      millName,
         harvest_time:   new Date(harvestTime).toISOString(),
         total_tonnage:  parseFloat(totalLoadTonnage),
         truck_count:    truckCount,
-        status:         'pending',
       };
 
       let harvestId = `demo-harvest-${Date.now()}`;
 
-      if (!user.isDemo && isSupabaseConfigured) {
+      if (!user?.isDemo && user?.id !== 'demo-petani' && isSupabaseConfigured) {
         // Try canonical table 'harvest_records'
         let hrError;
         let hrData;
@@ -246,26 +247,25 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
 
         return {
           harvest_id:     harvestId,
-          // keep backward compat keys for local state
-          batch_id:       harvestId,
-          plate_number:   t.plate,
-          driver_name:    t.driver,
-          tonnage:        parseFloat(estWeightPerTruck),
-          status:         'queued',
-          harvest_time:   new Date(harvestTime).toISOString(),
-          scheduled_slot: new Date(slotMs).toISOString(),
-          departure_time: new Date(departureMs).toISOString(),
-          brix:           14.2,
           spta_code:      sptaCode,
-          // legacy key used by TicketScreen for display
+          plate_number:   t.plate.trim() || '-',
+          driver_name:    t.driver.trim() || '-',
+          tonnage:        parseFloat(estWeightPerTruck),
+          scheduled_slot: new Date(slotMs).toISOString(),
+          status:         'TERJADWAL',
+          
+          // Legacy properties required by TicketScreen local state
+          batch_id:       harvestId,
           spta_ticket:    sptaCode,
         };
       });
 
       // ── 3. Insert into spta_tickets ─────────────────────────────────────────
-      if (!user.isDemo && isSupabaseConfigured) {
-        // DB columns don't include the local-only alias keys — strip them
-        const dbTickets = ticketRows.map(({ batch_id, spta_ticket, ...rest }) => rest);
+      if (!user?.isDemo && user?.id !== 'demo-petani' && isSupabaseConfigured) {
+        // DB columns only take specified fields
+        const dbTickets = ticketRows.map(({ harvest_id, spta_code, plate_number, driver_name, tonnage, scheduled_slot, status }) => ({
+          harvest_id, spta_code, plate_number, driver_name, tonnage, scheduled_slot, status
+        }));
 
         let stError;
         const { error: e1 } = await supabase.from('spta_tickets').insert(dbTickets);
@@ -306,93 +306,67 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
     }
   };
 
+  const handleTabSwitch = (tab) => {
+    setError(''); setSuccess('');
+    setActiveTab(tab);
+  };
+
   if (!isOpen) return null;
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      className="hide-scrollbar"
-      style={{
-        position: 'fixed', inset: 0,
-        zIndex: 200,
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.88)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-        animation: 'fadeInOverlay 0.2s ease',
-      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      style={{ animation: 'fadeInOverlay 0.2s ease' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      {/* ── Bottom Sheet Container ── */}
-      <div
-        style={{
-          width: '100%', maxWidth: 480,
-          maxHeight: '90dvh',          /* limit to 90% of dynamic viewport */
-          margin: 'auto',              /* center vertically and horizontally */
-          background: 'rgba(13,17,18,0.98)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: '24px',        /* full rounded corners for centered modal */
-          display: 'flex', flexDirection: 'column',
-          boxShadow: '0 16px 64px rgba(0,0,0,0.7)',
-          animation: 'slideUpSheet 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
-          overflow: 'hidden',
-        }}
-      >
-        {/* ── Drag Handle ── */}
-        <div style={{ padding: '12px 0 4px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
-          <div style={{ width: 48, height: 5, borderRadius: 4, background: 'rgba(255,255,255,0.15)' }} />
-        </div>
-
-        {/* ── Header ── */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 20px 12px', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>
-            Registrasi Petak Lahan & Panen
-          </h3>
-          <button
-            onClick={onClose}
-            style={{
-              width: 34, height: 34, borderRadius: '50%',
-              background: 'rgba(255,255,255,0.08)', border: 'none',
-              color: 'var(--color-on-surface-variant)', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* ── Tabs ── */}
-        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 4, margin: '0 20px 12px', flexShrink: 0 }}>
-          <button onClick={() => setActiveTab('plot')} style={tabStyle(activeTab === 'plot', false)}>
-            Daftar Sawah
-          </button>
-          <button onClick={() => setActiveTab('harvest')} style={tabStyle(activeTab === 'harvest', true)}>
-            Input Panen & Armada
-          </button>
-        </div>
-
-        {/* ── Alerts ── */}
-        {(error || success) && (
-          <div style={{ padding: '0 20px 8px', flexShrink: 0 }}>
-            {error  && <div style={{ background: 'rgba(255,180,171,0.12)', padding: '10px 14px', borderRadius: 10, color: 'var(--color-error)', fontSize: 13, border: '1px solid rgba(255,100,80,0.2)', lineHeight: 1.4 }}>{error}</div>}
-            {success && <div style={{ background: 'rgba(166,214,79,0.12)',  padding: '10px 14px', borderRadius: 10, color: 'var(--color-tertiary)', fontSize: 13, border: '1px solid rgba(166,214,79,0.2)' }}>{success}</div>}
+      {/* ── Modal Card Container ── */}
+      <div className="w-full max-w-lg max-h-[88dvh] flex flex-col bg-[#161d18] border border-gray-800 rounded-2xl overflow-hidden">
+        
+        {/* ── Sticky Header & Tabs ── */}
+        <div className="shrink-0 p-4 border-b border-gray-800/60 bg-[#161d18] z-10">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>
+              Registrasi Petak Lahan & Panen
+            </h3>
+            <button
+              onClick={onClose}
+              style={{
+                width: 34, height: 34, borderRadius: '50%',
+                background: 'rgba(255,255,255,0.08)', border: 'none',
+                color: 'var(--color-on-surface-variant)', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <X size={18} />
+            </button>
           </div>
-        )}
+
+          {/* ── Tabs ── */}
+          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 4 }}>
+            <button onClick={() => handleTabSwitch('plot')} style={tabStyle(activeTab === 'plot', false)}>
+              Daftar Sawah
+            </button>
+            <button onClick={() => handleTabSwitch('harvest')} style={tabStyle(activeTab === 'harvest', true)}>
+              Input Panen & Armada
+            </button>
+          </div>
+
+          {/* ── Alerts ── */}
+          {(error || success) && (
+            <div style={{ marginTop: 12 }}>
+              {error  && <div style={{ background: 'rgba(255,180,171,0.12)', padding: '10px 14px', borderRadius: 10, color: 'var(--color-error)', fontSize: 13, border: '1px solid rgba(255,100,80,0.2)', lineHeight: 1.4 }}>{error}</div>}
+              {success && <div style={{ background: 'rgba(166,214,79,0.12)',  padding: '10px 14px', borderRadius: 10, color: 'var(--color-tertiary)', fontSize: 13, border: '1px solid rgba(166,214,79,0.2)' }}>{success}</div>}
+            </div>
+          )}
+        </div>
 
         {/* ── Scrollable Form Body ── */}
         <div
-          className="hide-scrollbar no-scrollbar touch-scroll"
-          style={{
-            flex: 1,
-            minHeight: 0,            /* CRITICAL: without this, flex children won't shrink and footer hides */
-            overflowY: 'auto',
-            overscrollBehavior: 'contain',
-            padding: '16px',
-            display: 'flex', flexDirection: 'column', gap: 16,
-            touchAction: 'pan-y',
-          }}
+          className="flex-1 overflow-y-auto p-4 space-y-4 overscroll-contain"
+          style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
         >
           {/* ── Tab A: Plot ── */}
           {activeTab === 'plot' && (
@@ -515,14 +489,7 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
         </div>
 
         {/* ── Sticky Footer — CTA Buttons ── */}
-        <div style={{
-          position: 'sticky', bottom: 0, zIndex: 20, flexShrink: 0,
-          padding: '12px 16px 24px',
-          borderTop: '1px solid rgba(255,255,255,0.08)',
-          background: 'rgba(13,17,18,0.95)',
-          backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-          display: 'flex', gap: 10,
-        }}>
+        <div className="shrink-0 p-4 bg-[#161d18] border-t border-gray-800/60 z-10 flex gap-3">
           {/* Cancel */}
           <button
             type="button"
