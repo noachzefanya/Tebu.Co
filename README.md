@@ -1,5 +1,5 @@
 # 🌾 Tebu.Co
-> **Solusi Digital Terintegrasi Rantai Pasok Tebang-Angkut & Mitigasi Tunda Giling Tebu**  
+> **Solusi Digital Terintegrasi Rantai Pasok Tebang-Angkut & Mitigasi Tunda Giling Tebu**
 > *(Smart Sugarcane Harvest & Mill Delivery System)*
 
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
@@ -130,9 +130,9 @@ Struktur utama basis data **Tebu.Co** di PostgreSQL:
 
 Untuk pengembangan jangka panjang menuju skala *Enterprise*, fitur-fitur berikut direncanakan dalam fase lanjutan:
 
-- [ ] **Automated Weighbridge IoT Integration:** Integrasi sensor IoT dari Jembatan Timbang pabrik langsung ke dalam basis data Supabase untuk meminimalkan *human-error*.
-- [ ] **AI Predictive Brix Scoring:** Analitik prediktif berbasis *Machine Learning* untuk memprediksi tingkat kemasakan dan nilai rendemen puncak berdasarkan data cuaca dan umur tanaman.
-- [ ] **Logistics Routing & Geofencing:** Optimasi rute armada menggunakan GPS untuk memperkirakan Waktu Ketibaan (ETA) secara presisi ke gerbang emplasemen Pabrik Gula.
+- `Automated Weighbridge IoT Integration:` Integrasi sensor IoT dari Jembatan Timbang pabrik langsung ke dalam basis data Supabase untuk meminimalkan *human-error*.
+- `AI Predictive Brix Scoring:` Analitik prediktif berbasis *Machine Learning* untuk memprediksi tingkat kemasakan dan nilai rendemen puncak berdasarkan data cuaca dan umur tanaman.
+- `Logistics Routing & Geofencing:` Optimasi rute armada menggunakan GPS untuk memperkirakan Waktu Ketibaan (ETA) secara presisi ke gerbang emplasemen Pabrik Gula.
 
 ---
 
@@ -143,7 +143,4 @@ Kami menyambut baik berbagai kontribusi dari *developers* maupun ahli agronomi. 
 Didistribusikan di bawah Lisensi MIT. Lihat file `LICENSE` untuk informasi lebih lanjut.
 
 ---
-<div align="center">
-  <b>Tebu.Co</b> &copy; 2026<br>
-  <i>Inovasi Digital Rantai Pasok Gula Nasional</i>
-</div>
+**Tebu.Co** &copy; 2026 - *Inovasi Digital Rantai Pasok Gula Nasional*
