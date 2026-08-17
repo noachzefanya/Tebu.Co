@@ -282,38 +282,13 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
 
   return (
     <div 
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
-        backdropFilter: 'blur(6px)',
-        WebkitBackdropFilter: 'blur(6px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '16px',
-        zIndex: 99999,
-      }}
+      className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm"
+      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999 }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div 
-        style={{
-          width: '100%',
-          maxWidth: '420px',
-          maxHeight: '85vh',
-          backgroundColor: '#141c16',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
-          borderRadius: '20px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.9)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          position: 'relative',
-          zIndex: 100000,
-        }}
+        className="relative w-full max-w-sm max-h-[85%] flex flex-col bg-[#141c16] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden"
+        style={{ backgroundColor: '#141c16', zIndex: 1000 }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header & Tabs (Fixed) */}
