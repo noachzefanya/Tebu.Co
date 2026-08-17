@@ -67,7 +67,7 @@ export default function HomeScreen({ active, user, activeSpta, onHarvestLogged, 
       }
       if (!isSupabaseConfigured || !user) return;
       try {
-        const { data } = await supabase.from('sugarcane_plots').select('area_ha, est_tonnage').eq('farmer_id', user.id);
+        const { data } = await supabase.from('plots').select('area_ha, est_tonnage').eq('farmer_id', user.id);
         if (data) {
           setTotalArea(data.reduce((sum, p) => sum + (p.area_ha || 0), 0));
           setTotalEst(data.reduce((sum, p) => sum + (p.est_tonnage || 0), 0));

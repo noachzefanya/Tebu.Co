@@ -22,11 +22,11 @@ export default function TicketScreen({ active, activeSpta, onOpenHarvestModal })
 
     const text = `*TIKET SPTA TEBU.CO*\n\n` +
       `Sopir: ${currentTicket.driver_name || '-'}\n` +
-      `Nomor Polisi: ${currentTicket.plate_number}\n` +
-      `Estimasi Muatan: ${currentTicket.tonnage} Ton\n\n` +
+      `Nomor Polisi: ${currentTicket.plate_number || currentTicket.truck_number || '-'}\n` +
+      `Estimasi Muatan: ${currentTicket.tonnage || (currentTicket.net_weight_kg ? currentTicket.net_weight_kg / 1000 : 0)} Ton\n\n` +
       `Wajib Berangkat dari Kebun: ${formatTime(currentTicket.departure_time)}\n` +
       `Jadwal Slot Timbang di PG: ${formatTime(currentTicket.scheduled_slot)}\n\n` +
-      `*KODE VERIFIKASI TIKET:*\n${currentTicket.spta_ticket}\n\n` +
+      `*KODE VERIFIKASI TIKET:*\n${currentTicket.ticket_code || currentTicket.spta_code || currentTicket.spta_ticket}\n\n` +
       `Tunjukkan QR Code di aplikasi Tebu.Co saat tiba di Pos Timbang Pabrik Gula.`;
       
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
@@ -95,7 +95,7 @@ export default function TicketScreen({ active, activeSpta, onOpenHarvestModal })
                         transition: 'all 0.2s ease'
                       }}
                     >
-                      Armada Truk #{idx + 1} — {t.plate_number}
+                      Armada Truk #{idx + 1} — {t.plate_number || t.truck_number || '-'}
                     </button>
                   ))}
                 </div>
@@ -138,13 +138,13 @@ export default function TicketScreen({ active, activeSpta, onOpenHarvestModal })
                   }}
                 >
                   <QRCodeSVG
-                    value={currentTicket.spta_ticket}
+                    value={currentTicket.ticket_code || currentTicket.spta_code || currentTicket.spta_ticket || ''}
                     size={140} fgColor="#0a0a0a" bgColor="#ffffff" level="H" includeMargin={false}
                   />
                 </div>
 
                 <p className="text-caps c-on-surface-var" style={{ fontSize: 11, letterSpacing: '0.05em', textAlign: 'center', wordBreak: 'break-all' }}>
-                  {currentTicket.spta_ticket}
+                  {currentTicket.ticket_code || currentTicket.spta_code || currentTicket.spta_ticket}
                 </p>
 
                 {/* Truck & Driver Details */}
@@ -152,7 +152,7 @@ export default function TicketScreen({ active, activeSpta, onOpenHarvestModal })
                   <div className="glass-card-dark" style={{ flex: 1, textAlign: 'center', padding: '10px 6px', borderRadius: 10 }}>
                     <p className="text-caps c-on-surface-var" style={{ fontSize: 9, marginBottom: 4 }}>KENDARAAN / TRUK</p>
                     <p className="text-body c-white" style={{ fontWeight: 700, fontSize: 13 }}>
-                      {currentTicket.plate_number}
+                      {currentTicket.plate_number || currentTicket.truck_number || '-'}
                     </p>
                   </div>
                   <div className="glass-card-dark" style={{ flex: 1, textAlign: 'center', padding: '10px 6px', borderRadius: 10 }}>
@@ -168,7 +168,7 @@ export default function TicketScreen({ active, activeSpta, onOpenHarvestModal })
                   >
                     <p className="text-caps c-primary" style={{ fontSize: 9, marginBottom: 4 }}>EST. MUATAN</p>
                     <p className="text-body c-primary" style={{ fontWeight: 700, fontSize: 13 }}>
-                      {currentTicket.tonnage} Ton
+                      {currentTicket.tonnage || (currentTicket.net_weight_kg ? currentTicket.net_weight_kg / 1000 : 0)} Ton
                     </p>
                   </div>
                 </div>
