@@ -281,61 +281,89 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
   if (!isOpen) return null;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}
+    <div 
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        backdropFilter: 'blur(6px)',
+        WebkitBackdropFilter: 'blur(6px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        zIndex: 99999,
+      }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      {/* ── Modal Card Container (Solid Dark Background) ── */}
-      <div className="relative w-full max-w-sm sm:max-w-md max-h-[85vh] flex flex-col bg-[#161d18] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden">
-
-        {/* ── Fixed Header & Mode Tabs ── */}
-        <div className="shrink-0 p-4 pb-3 border-b border-gray-800/60 bg-[#161d18] z-10">
+      <div 
+        style={{
+          width: '100%',
+          maxWidth: '420px',
+          maxHeight: '85vh',
+          backgroundColor: '#141c16',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
+          borderRadius: '20px',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.9)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          position: 'relative',
+          zIndex: 100000,
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Top Header & Tabs (Fixed) */}
+        <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: '#141c16', flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>
-              Registrasi Petak Lahan & Panen
-            </h3>
-            <button
-              onClick={onClose}
-              style={{
-                width: 34, height: 34, borderRadius: '50%',
-                background: 'rgba(255,255,255,0.08)', border: 'none',
-                color: 'var(--color-on-surface-variant)', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0,
-              }}
+            <h3 style={{ fontSize: 17, fontWeight: 800, color: '#ffffff', margin: 0 }}>Registrasi Petak Lahan & Panen</h3>
+            <button 
+              type="button" 
+              onClick={onClose} 
+              style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255, 255, 255, 0.08)', border: 'none', color: '#ccc', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
-              <X size={18} />
+              ✕
             </button>
           </div>
-
-          {/* ── Tabs ── */}
-          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 4 }}>
-            <button onClick={() => handleTabSwitch('plot')} style={tabStyle(activeTab === 'plot', false)}>
+          
+          <div style={{ display: 'flex', background: 'rgba(0, 0, 0, 0.4)', borderRadius: 12, padding: 4, gap: 4 }}>
+            <button 
+              type="button" 
+              onClick={() => { setError(''); setSuccess(''); setActiveTab('plot'); }}
+              style={{
+                flex: 1, padding: '9px 6px', borderRadius: 9, border: 'none',
+                background: activeTab === 'plot' ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+                color: activeTab === 'plot' ? '#ffffff' : '#888888', fontWeight: 700, fontSize: 12, cursor: 'pointer'
+              }}
+            >
               Daftar Sawah
             </button>
-            <button onClick={() => handleTabSwitch('harvest')} style={tabStyle(activeTab === 'harvest', true)}>
+            <button 
+              type="button" 
+              onClick={() => { setError(''); setSuccess(''); setActiveTab('harvest'); }}
+              style={{
+                flex: 1, padding: '9px 6px', borderRadius: 9, border: 'none',
+                background: activeTab === 'harvest' ? '#a6d64f' : 'transparent',
+                color: activeTab === 'harvest' ? '#141c16' : '#888888', fontWeight: 800, fontSize: 12, cursor: 'pointer'
+              }}
+            >
               Input Panen & Armada
             </button>
           </div>
 
-          {/* ── Alerts ── */}
           {(error || success) && (
-            <div style={{ marginTop: 12 }}>
-              {error && <div style={{ background: 'rgba(255,180,171,0.12)', padding: '10px 14px', borderRadius: 10, color: 'var(--color-error, #ff8a7a)', fontSize: 13, border: '1px solid rgba(255,100,80,0.2)', lineHeight: 1.4 }}>{error}</div>}
-              {success && <div style={{ background: 'rgba(166,214,79,0.12)', padding: '10px 14px', borderRadius: 10, color: 'var(--color-tertiary, #a6d64f)', fontSize: 13, border: '1px solid rgba(166,214,79,0.2)' }}>{success}</div>}
+            <div style={{ marginTop: 10 }}>
+              {error && <div style={{ background: 'rgba(255, 80, 80, 0.15)', border: '1px solid rgba(255, 80, 80, 0.3)', padding: '8px 12px', borderRadius: 8, color: '#ff8a7a', fontSize: 12 }}>{error}</div>}
+              {success && <div style={{ background: 'rgba(166, 214, 79, 0.15)', border: '1px solid rgba(166, 214, 79, 0.3)', padding: '8px 12px', borderRadius: 8, color: '#a6d64f', fontSize: 12 }}>{success}</div>}
             </div>
           )}
         </div>
 
-        {/* ── Scrollable Form Body ── */}
-        <div
-          className="flex-1 overflow-y-auto p-4 space-y-4 overscroll-contain touch-pan-y focus:outline-none bg-[#161d18]"
-          style={{ WebkitOverflowScrolling: 'touch' }}
-          tabIndex="-1"
-        >
+        {/* Scrollable Form Body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px', backgroundColor: '#141c16', display: 'flex', flexDirection: 'column', gap: 14 }}>
           {/* ── Tab A: Plot ── */}
           {activeTab === 'plot' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 8 }}>
@@ -456,60 +484,30 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
           )}
         </div>
 
-        {/* ── Fixed Footer — CTA Buttons ── */}
-        <div className="shrink-0 p-4 pt-3 border-t border-gray-800/60 bg-[#161d18] z-10 flex gap-3">
-          {/* Cancel */}
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              flex: '0 0 auto', padding: '0 20px', height: 52, borderRadius: 14,
-              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
-              color: 'var(--color-on-surface-variant, #aaa)', fontFamily: 'var(--font-display)',
-              fontSize: 14, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
-            }}
+        {/* Bottom Action Footer (Fixed) */}
+        <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: '#141c16', display: 'flex', gap: 10, flexShrink: 0 }}>
+          <button 
+            type="button" 
+            onClick={onClose} 
+            style={{ flex: 1, height: 46, borderRadius: 12, background: 'rgba(255, 255, 255, 0.06)', border: '1px solid rgba(255, 255, 255, 0.12)', color: '#ccc', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
           >
             Batal
           </button>
-
-          {/* Primary CTA */}
-          {activeTab === 'plot' ? (
-            <button
-              type="button"
-              onClick={handleSavePlot}
-              disabled={loading}
-              style={{
-                flex: 1, height: 52, borderRadius: 14,
-                border: '1px solid rgba(255,255,255,0.2)',
-                background: loading ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.08)',
-                color: '#fff', fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 700,
-                display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8,
-                cursor: loading ? 'default' : 'pointer',
-              }}
-            >
-              {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={16} />}
-              Simpan Petak Sawah
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleSaveHarvest}
-              disabled={loading || plots.length === 0}
-              style={{
-                flex: 1, height: 52, borderRadius: 14, border: 'none',
-                background: (loading || plots.length === 0) ? 'rgba(166,214,79,0.3)' : 'var(--color-tertiary, #a6d64f)',
-                color: (loading || plots.length === 0) ? 'rgba(35,54,0,0.5)' : 'var(--color-on-tertiary, #1b2f00)',
-                fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800,
-                display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8,
-                cursor: (loading || plots.length === 0) ? 'default' : 'pointer',
-                boxShadow: plots.length > 0 && !loading ? '0 4px 24px rgba(166,214,79,0.35)' : 'none',
-                transition: 'box-shadow 0.2s, background 0.2s',
-              }}
-            >
-              {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <QrCode size={16} />}
-              Terbitkan SPTA & Jadwalkan ({truckCount} Truk)
-            </button>
-          )}
+          <button 
+            type="button" 
+            onClick={activeTab === 'plot' ? handleSavePlot : handleSaveHarvest}
+            disabled={loading}
+            style={{
+              flex: 2, height: 46, borderRadius: 12, border: 'none',
+              background: activeTab === 'plot' ? 'rgba(255, 255, 255, 0.15)' : '#a6d64f',
+              color: activeTab === 'plot' ? '#ffffff' : '#141c16',
+              fontWeight: 800, fontSize: 13, cursor: loading ? 'default' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
+            }}
+          >
+            {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : (activeTab === 'plot' ? <Save size={16} /> : <QrCode size={16} />)}
+            {loading ? 'Menyimpan...' : (activeTab === 'plot' ? 'Simpan Petak Sawah' : `Terbitkan SPTA (${truckCount} Truk)`)}
+          </button>
         </div>
       </div>
 

@@ -373,13 +373,15 @@ export default function HomeScreen({ active, user, activeSpta, onHarvestLogged, 
       )}
 
       {/* Modals */}
-      <PlotHarvestModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        user={user}
-        onHarvestLogged={onHarvestLogged}
-        onPlotCreated={() => setPlotUpdateTick(tick => tick + 1)}
-      />
+      {isModalOpen && (
+        <PlotHarvestModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          user={user}
+          onHarvestLogged={onHarvestLogged}
+          onPlotCreated={() => setPlotUpdateTick(tick => tick + 1)}
+        />
+      )}
 
       <style>{`
         @keyframes pulse-glow {
