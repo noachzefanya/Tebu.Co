@@ -76,11 +76,11 @@ export default function MillAdminScreen() {
       // Mock data
       setIncomingTrucks([
         {
-          id: 'mock-1', plate_number: 'B 9182 KQA', driver_name: 'Sutrisno P.', tonnage: 22.4, status: 'in_transit',
+          id: 'mock-1', plate_number: 'B 9182 KQA', driver_name: 'Sutrisno P.', tonnage: 22.4, status: 'TERJADWAL',
           scheduled_slot: new Date(Date.now() - 3600000).toISOString(),
         },
         {
-          id: 'mock-2', plate_number: 'N 8102 UQ', driver_name: 'Ahmad Dahlan', tonnage: 24.5, status: 'in_transit',
+          id: 'mock-2', plate_number: 'N 8102 UQ', driver_name: 'Ahmad Dahlan', tonnage: 24.5, status: 'TERJADWAL',
           scheduled_slot: new Date(Date.now() + 1800000).toISOString(),
         },
         {
@@ -93,14 +93,26 @@ export default function MillAdminScreen() {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('truck_dispatches')
+      let fetchError, fetchedData;
+      const { data: d1, error: e1 } = await supabase
+        .from('spta_tickets')
         .select('*')
-        .in('status', ['in_transit', 'BUFFER QUEUE'])
+        .in('status', ['TERJADWAL', 'BUFFER QUEUE', 'in_transit'])
         .order('scheduled_slot', { ascending: true });
-        
-      if (error) throw error;
-      setIncomingTrucks(data || []);
+      
+      fetchError = e1; fetchedData = d1;
+
+      if (e1?.code === '42P01') {
+        const { data: d2, error: e2 } = await supabase
+          .from('truck_dispatches')
+          .select('*')
+          .in('status', ['in_transit', 'BUFFER QUEUE', 'TERJADWAL'])
+          .order('scheduled_slot', { ascending: true });
+        fetchError = e2; fetchedData = d2;
+      }
+
+      if (fetchError) throw fetchError;
+      setIncomingTrucks(fetchedData || []);
     } catch (err) {
       console.error('Admin fetch error:', err);
     } finally {
@@ -118,16 +130,28 @@ export default function MillAdminScreen() {
 
   const handleVerify = async (truck, isLate) => {
     setActionLoading(true);
-    const newStatus = isLate ? 'BUFFER QUEUE' : 'WEIGHED & MILLING';
+    // Follow the requested status: DITIMBANG
+    const newStatus = isLate ? 'BUFFER QUEUE' : 'DITIMBANG';
     const newArrivalStatus = isLate ? 'LATE_BUFFER' : 'ON_TIME';
 
     if (isSupabaseConfigured) {
       try {
-        const { error } = await supabase
-          .from('truck_dispatches')
-          .update({ status: newStatus, arrival_status: newArrivalStatus })
+        let updateError;
+        const { error: e1 } = await supabase
+          .from('spta_tickets')
+          .update({ status: newStatus })
           .eq('id', truck.id);
-        if (error) throw error;
+        updateError = e1;
+        
+        if (e1?.code === '42P01') {
+          const { error: e2 } = await supabase
+            .from('truck_dispatches')
+            .update({ status: newStatus, arrival_status: newArrivalStatus })
+            .eq('id', truck.id);
+          updateError = e2;
+        }
+
+        if (updateError) throw updateError;
       } catch (err) {
         console.warn('Fallback to optimistic update due to error:', err);
       }
@@ -140,7 +164,7 @@ export default function MillAdminScreen() {
   };
 
   const filteredTrucks = incomingTrucks.filter(t => 
-    queueTab === 'transit' ? t.status === 'in_transit' : t.status === 'BUFFER QUEUE'
+    queueTab === 'transit' ? (t.status === 'in_transit' || t.status === 'TERJADWAL') : t.status === 'BUFFER QUEUE'
   );
 
   return (
@@ -249,7 +273,17 @@ export default function MillAdminScreen() {
                   <button 
                     onClick={() => {
                       if (manualCode) {
-                        const found = incomingTrucks.find(t => t.plate_number.toLowerCase().includes(manualCode.toLowerCase()) || (t.spta_ticket && t.spta_ticket.toLowerCase().includes(manualCode.toLowerCase())));
+                        let searchCode = manualCode.trim();
+                        try {
+                          const parsed = JSON.parse(searchCode);
+                          if (parsed.spta_code) searchCode = parsed.spta_code;
+                        } catch (e) { /* not JSON */ }
+
+                        const found = incomingTrucks.find(t => 
+                          (t.spta_code && t.spta_code.toLowerCase().includes(searchCode.toLowerCase())) ||
+                          (t.plate_number && t.plate_number.toLowerCase().includes(searchCode.toLowerCase())) || 
+                          (t.spta_ticket && t.spta_ticket.toLowerCase().includes(searchCode.toLowerCase()))
+                        );
                         if (found) handleSimulateScan(found);
                         else alert('Tiket tidak ditemukan di antrean.');
                       }
@@ -265,7 +299,7 @@ export default function MillAdminScreen() {
                   onClick={() => { if(incomingTrucks.length > 0) handleSimulateScan(incomingTrucks[0]); else alert('Antrean kosong.'); }}
                   style={{ marginTop: 16, width: '100%', padding: '12px', borderRadius: 12, border: '1px solid rgba(166,214,79,0.3)', background: 'rgba(166,214,79,0.1)', color: 'var(--color-primary)', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer' }}
                 >
-                  <Play size={16} /> Simulasi Scan Cepat (Demo)
+                  <Play size={16} /> Simulasi Scan Truk #1 (Demo)
                 </button>
               </div>
             </div>
@@ -329,7 +363,7 @@ export default function MillAdminScreen() {
                           color: isLate ? '#410002' : '#0f3800'
                         }}
                       >
-                        {actionLoading ? 'Menyimpan...' : (isLate ? 'ALIHKAN KE JALUR CADANGAN (BUFFER)' : 'VERIFIKASI & TIMBANG')}
+                        {actionLoading ? 'Menyimpan...' : (isLate ? 'ALIHKAN KE JALUR CADANGAN' : 'UBAH STATUS: DITIMBANG')}
                       </button>
                     </div>
                   </div>

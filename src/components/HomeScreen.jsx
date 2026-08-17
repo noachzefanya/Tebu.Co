@@ -56,6 +56,7 @@ export default function HomeScreen({ active, user, activeSpta, onHarvestLogged, 
   const [totalArea, setTotalArea] = useState(0);
   const [totalEst, setTotalEst] = useState(0);
   const [showFinanceDetails, setShowFinanceDetails] = useState(false);
+  const [plotUpdateTick, setPlotUpdateTick] = useState(0);
 
   useEffect(() => {
     async function fetchStats() {
@@ -77,7 +78,7 @@ export default function HomeScreen({ active, user, activeSpta, onHarvestLogged, 
     }
     fetchStats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, isModalOpen]);
+  }, [user, isModalOpen, plotUpdateTick]);
 
   const batchTrucks = activeSpta?.batch_trucks || (activeSpta ? [activeSpta] : []);
   const totalGrossTonnage = batchTrucks.reduce((sum, t) => sum + (Number(t.tonnage) || 0), 0);
@@ -377,6 +378,7 @@ export default function HomeScreen({ active, user, activeSpta, onHarvestLogged, 
         onClose={() => setIsModalOpen(false)}
         user={user}
         onHarvestLogged={onHarvestLogged}
+        onPlotCreated={() => setPlotUpdateTick(tick => tick + 1)}
       />
 
       <style>{`

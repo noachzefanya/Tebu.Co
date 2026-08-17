@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Map, Calendar, Scale, Truck, UserCircle, QrCode, Loader2, Save, Factory, Minus, Plus } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 
@@ -6,8 +7,9 @@ import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
  * PlotHarvestModal — Fixed bottom-sheet modal with scrollable body + sticky CTA footer.
  * Ensures submit buttons are always visible above the bottom nav.
  */
-export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogged }) {
+export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogged, onPlotCreated }) {
   const [activeTab, setActiveTab] = useState('plot');
+  const isDemo = !user?.id || user?.id?.startsWith('demo-');
 
   // Tab A: Plot
   const [plotName, setPlotName]     = useState('');
@@ -31,10 +33,10 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
   const [success, setSuccess]   = useState('');
 
   useEffect(() => {
-    if (isOpen && user && isSupabaseConfigured && !user.isDemo) {
+    if (isOpen && user && isSupabaseConfigured && !isDemo) {
       fetchPlots();
       fetchMills();
-    } else if (isOpen && user?.isDemo) {
+    } else if (isOpen && isDemo) {
       setPlots([{ id: 'demo-1', plot_name: 'Blok Asembagus (Demo)' }]);
       setSelectedPlot('demo-1');
       setSugarMills([
@@ -48,17 +50,17 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
 
   const fetchPlots = async () => {
     try {
-      // Try canonical table name first, fall back to legacy name
+      // Try legacy table 'sugarcane_plots' first
       let { data, error } = await supabase
-        .from('plots')
+        .from('sugarcane_plots')
         .select('*')
         .eq('farmer_id', user.id);
 
-      if (error?.code === '42P01') {
-        // Table 'plots' does not exist — try legacy table
-        console.warn('[PlotHarvestModal] Table "plots" not found, falling back to "sugarcane_plots"');
+      if (error?.code === '42P01' || error?.message?.includes('schema cache')) {
+        // Table 'sugarcane_plots' does not exist or has cache error — try new table
+        console.warn('[PlotHarvestModal] Table "sugarcane_plots" not found, falling back to "plots"');
         ({ data, error } = await supabase
-          .from('sugarcane_plots')
+          .from('plots')
           .select('*')
           .eq('farmer_id', user.id));
       }
@@ -104,32 +106,35 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
     setLoading(true); setError(''); setSuccess('');
 
     try {
-      if (user?.isDemo || user?.id === 'demo-petani') {
+      const currentUserId = user?.id;
+
+      if (isDemo) {
         // ── Demo / offline mode ──────────────────────────────────────────────
         await new Promise(r => setTimeout(r, 600));
-        setPlots(prev => [...prev, { id: `mock-plot-${Date.now()}`, plot_name: plotName }]);
+        const newPlot = { id: `mock-plot-${Date.now()}`, plot_name: plotName.trim() };
+        setPlots(prev => [...prev, newPlot]);
+        if (onPlotCreated) onPlotCreated();
         setSuccess('Lahan berhasil didaftarkan (Mode Demo).');
       } else {
         // ── Live Supabase mode ───────────────────────────────────────────────
         const plotPayload = {
-          farmer_id:  user?.id,
-
-          plot_name:  plotName.trim(),
-          area_ha:    parseFloat(area),
-          variety,
-          plant_date: plantDate,
-          est_tonnage: parseFloat(estTonnage),
+          farmer_id: currentUserId,
+          plot_name: plotName.trim(),
+          area_ha: parseFloat(area) || 0,
+          est_tonnage: parseFloat(estTonnage) || 0,
+          variety: variety || 'Bululawang (BL)',
+          plant_date: plantDate || new Date().toISOString()
         };
 
-        // Try canonical table 'plots' first
+        // Try 'sugarcane_plots' first
         let insertError;
-        const { error: e1 } = await supabase.from('plots').insert([plotPayload]);
+        const { error: e1 } = await supabase.from('sugarcane_plots').insert([plotPayload]);
         insertError = e1;
 
-        if (e1?.code === '42P01') {
-          // Fallback to legacy table name
-          console.warn('[PlotHarvestModal] Tabel "plots" tidak ditemukan, menggunakan "sugarcane_plots"');
-          const { error: e2 } = await supabase.from('sugarcane_plots').insert([plotPayload]);
+        if (e1?.code === '42P01' || e1?.message?.includes('schema cache')) {
+          // Fallback to new table name
+          console.warn('[PlotHarvestModal] Tabel "sugarcane_plots" error, menggunakan "plots"');
+          const { error: e2 } = await supabase.from('plots').insert([plotPayload]);
           insertError = e2;
         }
 
@@ -141,6 +146,7 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
         console.log('[PlotHarvestModal] Petak sawah berhasil disimpan:', plotPayload);
         setSuccess('Lahan berhasil didaftarkan dan disimpan ke database.');
         fetchPlots();
+        if (onPlotCreated) onPlotCreated();
       }
 
       setPlotName(''); setArea(''); setEstTonnage('');
@@ -186,23 +192,24 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
     setLoading(true); setError('');
 
     try {
+      const currentUserId = user?.id;
       const mill = sugarMills.find(m => m.id === selectedMill);
       const interval = mill?.slot_interval_minutes || 15;
       const millName = mill ? mill.name : '';
 
       // ── 1. Insert into harvest_records (or mock) ────────────────────────────
       const harvestPayload = {
-        farmer_id:      user?.id,
+        farmer_id:      currentUserId,
         plot_id:        selectedPlot,
         mill_name:      millName,
-        harvest_time:   new Date(harvestTime).toISOString(),
-        total_tonnage:  parseFloat(totalLoadTonnage),
-        truck_count:    truckCount,
+        harvest_time:   harvestTime ? new Date(harvestTime).toISOString() : new Date().toISOString(),
+        total_tonnage:  parseFloat(totalLoadTonnage) || 0,
+        truck_count:    parseInt(truckCount, 10) || 1,
       };
 
       let harvestId = `demo-harvest-${Date.now()}`;
 
-      if (!user?.isDemo && user?.id !== 'demo-petani' && isSupabaseConfigured) {
+      if (!isDemo && isSupabaseConfigured) {
         // Try canonical table 'harvest_records'
         let hrError;
         let hrData;
@@ -214,9 +221,9 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
           .single();
         hrError = e1; hrData = d1;
 
-        if (e1?.code === '42P01') {
+        if (e1?.code === '42P01' || e1?.message?.includes('schema cache')) {
           // Fallback to legacy table
-          console.warn('[PlotHarvestModal] Tabel "harvest_records" tidak ditemukan, menggunakan "harvest_batches"');
+          console.warn('[PlotHarvestModal] Tabel "harvest_records" error (schema cache/missing), menggunakan "harvest_batches"');
           const { data: d2, error: e2 } = await supabase
             .from('harvest_batches')
             .insert([harvestPayload])
@@ -243,7 +250,7 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
       const ticketRows = trucks.map((t, idx) => {
         const slotMs      = baseHarvestTimeMs + (idx * interval * 60000);
         const departureMs = slotMs - (travelDurationMinutes * 60000);
-        const sptaCode    = `TEBUCO-SPTA-${Date.now().toString().slice(-6)}-${t.plate.replace(/\s+/g, '')}`;
+        const sptaCode    = `TEBUCO-${Date.now()}-${idx + 1}`;
 
         return {
           harvest_id:     harvestId,
@@ -261,7 +268,7 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
       });
 
       // ── 3. Insert into spta_tickets ─────────────────────────────────────────
-      if (!user?.isDemo && user?.id !== 'demo-petani' && isSupabaseConfigured) {
+      if (!isDemo && isSupabaseConfigured) {
         // DB columns only take specified fields
         const dbTickets = ticketRows.map(({ harvest_id, spta_code, plate_number, driver_name, tonnage, scheduled_slot, status }) => ({
           harvest_id, spta_code, plate_number, driver_name, tonnage, scheduled_slot, status
@@ -271,8 +278,8 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
         const { error: e1 } = await supabase.from('spta_tickets').insert(dbTickets);
         stError = e1;
 
-        if (e1?.code === '42P01') {
-          console.warn('[PlotHarvestModal] Tabel "spta_tickets" tidak ditemukan, menggunakan "truck_dispatches"');
+        if (e1?.code === '42P01' || e1?.message?.includes('schema cache')) {
+          console.warn('[PlotHarvestModal] Tabel "spta_tickets" error (schema cache/missing), menggunakan "truck_dispatches"');
           // Fallback: build legacy shape
           const legacyRows = ticketRows.map(({ harvest_id, spta_code, ...rest }) => ({
             ...rest,
@@ -313,7 +320,7 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -565,7 +572,8 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
           filter: invert(1); opacity: 0.5;
         }
       `}</style>
-    </div>
+    </div>,
+    document.body
   );
 }
 
