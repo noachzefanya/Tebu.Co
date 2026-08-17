@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { X, Map, Calendar, Scale, Truck, UserCircle, QrCode, Loader2, Save, Factory, Minus, Plus } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 
@@ -12,25 +11,25 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
   const isDemo = !user?.id || user?.id?.startsWith('demo-');
 
   // Tab A: Plot
-  const [plotName, setPlotName]     = useState('');
-  const [area, setArea]             = useState('');
-  const [variety, setVariety]       = useState('VMC 76-16');
-  const [plantDate, setPlantDate]   = useState('');
+  const [plotName, setPlotName] = useState('');
+  const [area, setArea] = useState('');
+  const [variety, setVariety] = useState('VMC 76-16');
+  const [plantDate, setPlantDate] = useState('');
   const [estTonnage, setEstTonnage] = useState('');
 
   // Tab B: Harvest
-  const [sugarMills, setSugarMills]     = useState([]);
+  const [sugarMills, setSugarMills] = useState([]);
   const [selectedMill, setSelectedMill] = useState('');
-  const [plots, setPlots]               = useState([]);
+  const [plots, setPlots] = useState([]);
   const [selectedPlot, setSelectedPlot] = useState('');
-  const [harvestTime, setHarvestTime]   = useState('');
+  const [harvestTime, setHarvestTime] = useState('');
   const [totalLoadTonnage, setTotalLoadTonnage] = useState('');
-  const [truckCount, setTruckCount]     = useState(1);
-  const [trucks, setTrucks]             = useState([{ plate: '', driver: '' }]);
+  const [truckCount, setTruckCount] = useState(1);
+  const [trucks, setTrucks] = useState([{ plate: '', driver: '' }]);
 
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState('');
-  const [success, setSuccess]   = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     if (isOpen && user && isSupabaseConfigured && !isDemo) {
@@ -41,32 +40,23 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
       setSelectedPlot('demo-1');
       setSugarMills([
         { id: 'mill-1', name: 'PG Asembagus', capacity_tcd: 4000, slot_interval_minutes: 15 },
-        { id: 'mill-2', name: 'PG Prajekan',  capacity_tcd: 3000, slot_interval_minutes: 20 },
+        { id: 'mill-2', name: 'PG Prajekan', capacity_tcd: 3000, slot_interval_minutes: 20 },
       ]);
       setSelectedMill('mill-1');
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, user]);
 
   const fetchPlots = async () => {
     try {
-      // Try legacy table 'sugarcane_plots' first
-      let { data, error } = await supabase
-        .from('sugarcane_plots')
+      // Only query from 'plots'
+      const { data, error } = await supabase
+        .from('plots')
         .select('*')
         .eq('farmer_id', user.id);
 
-      if (error?.code === '42P01' || error?.message?.includes('schema cache')) {
-        // Table 'sugarcane_plots' does not exist or has cache error — try new table
-        console.warn('[PlotHarvestModal] Table "sugarcane_plots" not found, falling back to "plots"');
-        ({ data, error } = await supabase
-          .from('plots')
-          .select('*')
-          .eq('farmer_id', user.id));
-      }
-
       if (error) throw error;
-      
+
       if (!data || data.length === 0) {
         console.warn('[PlotHarvestModal] No plots found, using mock data fallback');
         const mockPlots = [{ id: 'mock-1', plot_name: 'Blok Asembagus (Mock)' }];
@@ -86,14 +76,24 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
   };
 
   const fetchMills = async () => {
+    const defaultMills = [
+      { id: 'mill-1', name: 'PG Asembagus', capacity_tcd: 4000, slot_interval_minutes: 15 },
+      { id: 'mill-2', name: 'PG Prajekan', capacity_tcd: 3000, slot_interval_minutes: 20 },
+    ];
+
     try {
       const { data, error } = await supabase.from('sugar_mills').select('*');
-      if (error) throw error;
-      setSugarMills(data || []);
-      if (data?.length > 0) setSelectedMill(data[0].id);
+      if (error || !data || data.length === 0) {
+        setSugarMills(defaultMills);
+        setSelectedMill(defaultMills[0].id);
+      } else {
+        setSugarMills(data);
+        setSelectedMill(data[0].id);
+      }
     } catch (err) {
-      console.error('[PlotHarvestModal] Gagal memuat daftar pabrik gula:', err);
-      // Non-fatal — user can still proceed if they previously had mills loaded
+      console.warn('[PlotHarvestModal] Gunakan fallback pabrik gula default');
+      setSugarMills(defaultMills);
+      setSelectedMill(defaultMills[0].id);
     }
   };
 
@@ -109,41 +109,31 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
       const currentUserId = user?.id;
 
       if (isDemo) {
-        // ── Demo / offline mode ──────────────────────────────────────────────
         await new Promise(r => setTimeout(r, 600));
-        const newPlot = { id: `mock-plot-${Date.now()}`, plot_name: plotName.trim() };
+        const newPlot = { id: `mock-plot-${Date.now()}`, plot_name: plotName.trim(), plot_code: plotName.trim() };
         setPlots(prev => [...prev, newPlot]);
         if (onPlotCreated) onPlotCreated();
         setSuccess('Lahan berhasil didaftarkan (Mode Demo).');
       } else {
-        // ── Live Supabase mode ───────────────────────────────────────────────
+        // ── Menggunakan kolom ASLI tabel 'plots' di Supabase ──
         const plotPayload = {
           farmer_id: currentUserId,
-          plot_name: plotName.trim(),
+          plot_code: plotName.trim(),
+          farmer_name: user?.full_name || 'Petani',
           area_ha: parseFloat(area) || 0,
-          est_tonnage: parseFloat(estTonnage) || 0,
-          variety: variety || 'Bululawang (BL)',
-          plant_date: plantDate || new Date().toISOString()
+          estimated_yield_tons: parseFloat(estTonnage) || 0,
+          sugar_cane_variety: variety || 'Bululawang (BL)',
+          sugar_mill_target: 'PG Asembagus',
+          status: 'AKTIF'
         };
 
-        // Try 'sugarcane_plots' first
-        let insertError;
-        const { error: e1 } = await supabase.from('sugarcane_plots').insert([plotPayload]);
-        insertError = e1;
-
-        if (e1?.code === '42P01' || e1?.message?.includes('schema cache')) {
-          // Fallback to new table name
-          console.warn('[PlotHarvestModal] Tabel "sugarcane_plots" error, menggunakan "plots"');
-          const { error: e2 } = await supabase.from('plots').insert([plotPayload]);
-          insertError = e2;
-        }
+        const { error: insertError } = await supabase.from('plots').insert([plotPayload]);
 
         if (insertError) {
           console.error('[PlotHarvestModal] Gagal menyimpan petak sawah:', insertError);
           throw new Error(`Gagal menyimpan data lahan: ${insertError.message}`);
         }
 
-        console.log('[PlotHarvestModal] Petak sawah berhasil disimpan:', plotPayload);
         setSuccess('Lahan berhasil didaftarkan dan disimpan ke database.');
         fetchPlots();
         if (onPlotCreated) onPlotCreated();
@@ -194,43 +184,31 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
     try {
       const currentUserId = user?.id;
       const mill = sugarMills.find(m => m.id === selectedMill);
+      const millName = mill ? mill.name : 'PG Asembagus';
       const interval = mill?.slot_interval_minutes || 15;
-      const millName = mill ? mill.name : '';
 
-      // ── 1. Insert into harvest_records (or mock) ────────────────────────────
+      // ── 1. Insert ke tabel 'harvest_records' sesuai kolom database ──
       const harvestPayload = {
-        farmer_id:      currentUserId,
-        plot_id:        selectedPlot,
-        mill_name:      millName,
-        harvest_time:   harvestTime ? new Date(harvestTime).toISOString() : new Date().toISOString(),
-        total_tonnage:  parseFloat(totalLoadTonnage) || 0,
-        truck_count:    parseInt(truckCount, 10) || 1,
+        farmer_id: currentUserId,
+        farmer_name: user?.full_name || 'Petani',
+        plot_id: selectedPlot,
+        sugar_mill: millName,
+        mill_name: millName,
+        total_weight_tons: parseFloat(totalLoadTonnage) || 0,
+        total_tonnage: parseFloat(totalLoadTonnage) || 0,
+        total_trucks: parseInt(truckCount, 10) || 1,
+        truck_count: parseInt(truckCount, 10) || 1,
+        status: 'TERJADWAL'
       };
 
       let harvestId = `demo-harvest-${Date.now()}`;
 
       if (!isDemo && isSupabaseConfigured) {
-        // Try canonical table 'harvest_records'
-        let hrError;
-        let hrData;
-
-        const { data: d1, error: e1 } = await supabase
+        const { data: hrData, error: hrError } = await supabase
           .from('harvest_records')
           .insert([harvestPayload])
           .select()
           .single();
-        hrError = e1; hrData = d1;
-
-        if (e1?.code === '42P01' || e1?.message?.includes('schema cache')) {
-          // Fallback to legacy table
-          console.warn('[PlotHarvestModal] Tabel "harvest_records" error (schema cache/missing), menggunakan "harvest_batches"');
-          const { data: d2, error: e2 } = await supabase
-            .from('harvest_batches')
-            .insert([harvestPayload])
-            .select()
-            .single();
-          hrError = e2; hrData = d2;
-        }
 
         if (hrError) {
           console.error('[PlotHarvestModal] Gagal menyimpan data panen:', hrError);
@@ -238,69 +216,51 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
         }
 
         harvestId = hrData?.id || harvestId;
-        console.log('[PlotHarvestModal] Data panen berhasil disimpan. ID:', harvestId);
       } else {
-        await new Promise(r => setTimeout(r, 600)); // Demo delay
+        await new Promise(r => setTimeout(r, 600));
       }
 
-      // ── 2. Build SPTA tickets ───────────────────────────────────────────────
-      const baseHarvestTimeMs     = new Date(harvestTime).getTime();
-      const travelDurationMinutes = 45;
+      // ── 2. Buat & Insert ke tabel 'spta_tickets' sesuai kolom database ──
+      const baseHarvestTimeMs = harvestTime ? new Date(harvestTime).getTime() : Date.now();
 
       const ticketRows = trucks.map((t, idx) => {
-        const slotMs      = baseHarvestTimeMs + (idx * interval * 60000);
-        const departureMs = slotMs - (travelDurationMinutes * 60000);
-        const sptaCode    = `TEBUCO-${Date.now()}-${idx + 1}`;
+        const slotMs = baseHarvestTimeMs + (idx * interval * 60000);
+        const sptaCode = `TEBUCO-${Date.now()}-${idx + 1}`;
+        const weightKg = (parseFloat(estWeightPerTruck) || 0) * 1000;
 
         return {
-          harvest_id:     harvestId,
-          spta_code:      sptaCode,
-          plate_number:   t.plate.trim() || '-',
-          driver_name:    t.driver.trim() || '-',
-          tonnage:        parseFloat(estWeightPerTruck),
-          scheduled_slot: new Date(slotMs).toISOString(),
-          status:         'TERJADWAL',
-          
-          // Legacy properties required by TicketScreen local state
-          batch_id:       harvestId,
-          spta_ticket:    sptaCode,
+          harvest_id: harvestId,
+          ticket_code: sptaCode,
+          spta_code: sptaCode, // Added back for MillAdminScreen search compatibility
+          truck_number: t.plate.trim().toUpperCase() || '-',
+          driver_name: t.driver.trim() || '-',
+          net_weight_kg: weightKg,
+          scheduled_slot: new Date(slotMs).toISOString(), // Added back for MillAdminScreen queue sorting
+          status: 'TERJADWAL',
+
+          // Properti untuk state lokal aplikasi
+          batch_id: harvestId,
+          spta_ticket: sptaCode,
+          plate_number: t.plate.trim().toUpperCase() || '-',
+          tonnage: parseFloat(estWeightPerTruck) || 0,
         };
       });
 
-      // ── 3. Insert into spta_tickets ─────────────────────────────────────────
       if (!isDemo && isSupabaseConfigured) {
-        // DB columns only take specified fields
-        const dbTickets = ticketRows.map(({ harvest_id, spta_code, plate_number, driver_name, tonnage, scheduled_slot, status }) => ({
-          harvest_id, spta_code, plate_number, driver_name, tonnage, scheduled_slot, status
+        const dbTickets = ticketRows.map(({ harvest_id, ticket_code, spta_code, truck_number, driver_name, net_weight_kg, scheduled_slot, status }) => ({
+          harvest_id, ticket_code, spta_code, truck_number, driver_name, net_weight_kg, scheduled_slot, status
         }));
 
-        let stError;
-        const { error: e1 } = await supabase.from('spta_tickets').insert(dbTickets);
-        stError = e1;
-
-        if (e1?.code === '42P01' || e1?.message?.includes('schema cache')) {
-          console.warn('[PlotHarvestModal] Tabel "spta_tickets" error (schema cache/missing), menggunakan "truck_dispatches"');
-          // Fallback: build legacy shape
-          const legacyRows = ticketRows.map(({ harvest_id, spta_code, ...rest }) => ({
-            ...rest,
-            batch_id: harvestId,
-          }));
-          const { error: e2 } = await supabase.from('truck_dispatches').insert(legacyRows);
-          stError = e2;
-        }
-
+        const { error: stError } = await supabase.from('spta_tickets').insert(dbTickets);
         if (stError) {
-          // Non-fatal: tiket tetap dibuat secara lokal
-          console.warn('[PlotHarvestModal] Gagal menyimpan tiket SPTA ke database (lanjut mode lokal):', stError.message);
-        } else {
-          console.log(`[PlotHarvestModal] ${ticketRows.length} tiket SPTA berhasil disimpan.`);
+          console.warn('[PlotHarvestModal] Gagal menyimpan tiket SPTA ke DB (fallback ke lokal):', stError.message);
         }
       }
 
-      // ── 4. Update local app state ───────────────────────────────────────────
+      // ── 3. Update state lokal ──
       onHarvestLogged({
         ...ticketRows[0],
-        plot_id:      selectedPlot,
+        plot_id: selectedPlot,
         batch_trucks: ticketRows,
       });
       onClose();
@@ -320,17 +280,17 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
 
   if (!isOpen) return null;
 
-  return createPortal(
+  return (
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm"
-      style={{ animation: 'fadeInOverlay 0.2s ease' }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      style={{ animation: 'fadeInOverlay 0.2s ease', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       {/* ── Modal Card Container ── */}
-      <div className="relative w-full max-w-lg max-h-[82dvh] sm:max-h-[85dvh] flex flex-col bg-[#161d18] border border-gray-800/80 rounded-2xl shadow-2xl overflow-hidden">
-        
+      <div className="relative w-full max-w-sm sm:max-w-md max-h-[85vh] flex flex-col bg-[#161d18] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden">
+
         {/* ── Fixed Header & Mode Tabs ── */}
         <div className="shrink-0 p-4 pb-3 border-b border-gray-800/60 bg-[#161d18] z-10">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -364,8 +324,8 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
           {/* ── Alerts ── */}
           {(error || success) && (
             <div style={{ marginTop: 12 }}>
-              {error  && <div style={{ background: 'rgba(255,180,171,0.12)', padding: '10px 14px', borderRadius: 10, color: 'var(--color-error)', fontSize: 13, border: '1px solid rgba(255,100,80,0.2)', lineHeight: 1.4 }}>{error}</div>}
-              {success && <div style={{ background: 'rgba(166,214,79,0.12)',  padding: '10px 14px', borderRadius: 10, color: 'var(--color-tertiary)', fontSize: 13, border: '1px solid rgba(166,214,79,0.2)' }}>{success}</div>}
+              {error && <div style={{ background: 'rgba(255,180,171,0.12)', padding: '10px 14px', borderRadius: 10, color: 'var(--color-error)', fontSize: 13, border: '1px solid rgba(255,100,80,0.2)', lineHeight: 1.4 }}>{error}</div>}
+              {success && <div style={{ background: 'rgba(166,214,79,0.12)', padding: '10px 14px', borderRadius: 10, color: 'var(--color-tertiary)', fontSize: 13, border: '1px solid rgba(166,214,79,0.2)' }}>{success}</div>}
             </div>
           )}
         </div>
@@ -421,7 +381,7 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
               <FieldGroup label="Pilih Petak Kebun">
                 <select value={selectedPlot} onChange={e => setSelectedPlot(e.target.value)} style={selectStyle}>
                   <option value="" disabled>-- Pilih Petak Kebun --</option>
-                  {plots.map(p => <option key={p.id} value={p.id}>{p.plot_name}</option>)}
+                  {plots.map(p => <option key={p.id} value={p.id}>{p.plot_name || p.plot_code}</option>)}
                 </select>
               </FieldGroup>
 
@@ -572,8 +532,7 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
           filter: invert(1); opacity: 0.5;
         }
       `}</style>
-    </div>,
-    document.body
+    </div>
   );
 }
 
