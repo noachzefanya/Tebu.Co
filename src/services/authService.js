@@ -53,6 +53,7 @@ export async function registerWithPhone({ fullName, phone, pin, role, millName =
         data: {
           full_name: fullName.trim(),
           phone:     cleanPhone,
+          phone_number: cleanPhone, // Add both to prevent SQL metadata mismatch
           role,
           mill_name: millName.trim(),
         },
@@ -178,4 +179,31 @@ export async function logoutUser() {
   } catch (err) {
     console.error('[authService] logoutUser unexpected error:', err);
   }
+}
+
+/**
+ * Generate a mock demo session/profile.
+ * 
+ * @param {'petani'|'admin_pg'} role 
+ * @returns {object} Mock profile object
+ */
+export function loginAsDemo(role) {
+  if (role === 'admin_pg') {
+    return {
+      id: 'demo-admin',
+      full_name: 'Admin PG Kebonagung (Demo)',
+      role: 'admin_pg',
+      phone: '081200000002',
+      mill_name: 'PG Kebonagung',
+      isDemo: true,
+    };
+  }
+  
+  return {
+    id: 'demo-petani',
+    full_name: 'Pak Sugeng (Demo)',
+    role: 'petani',
+    phone: '081200000001',
+    isDemo: true,
+  };
 }

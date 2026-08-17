@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Phone, Lock, User, ChevronRight, Loader2, Factory, ArrowLeft } from 'lucide-react';
-import { registerWithPhone, loginWithPhone } from '../services/authService.js';
+import { registerWithPhone, loginWithPhone, loginAsDemo } from '../services/authService.js';
 
 /**
  * AuthScreen — Phone + PIN authentication modal.
@@ -411,6 +411,39 @@ export default function AuthScreen({ onLogin }) {
             {mode === 'login' ? 'Daftar Sekarang' : 'Masuk'}
           </button>
         </p>
+
+        {/* ── Demo Mode / Uji Coba Cepat ── */}
+        <div style={{ marginTop: 8, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <p style={{ textAlign: 'center', fontSize: 11, color: 'var(--color-on-surface-variant)', letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: 700 }}>
+            Mode Demo / Uji Coba Cepat
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <button
+              onClick={() => onLogin(loginAsDemo('petani'))}
+              style={{
+                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                padding: '10px', borderRadius: 10, color: 'var(--color-primary)',
+                fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                transition: 'background 0.2s',
+              }}
+            >
+              <span style={{ fontSize: 14 }}>🌾</span> Petani
+            </button>
+            <button
+              onClick={() => onLogin(loginAsDemo('admin_pg'))}
+              style={{
+                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                padding: '10px', borderRadius: 10, color: 'var(--color-tertiary)',
+                fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                transition: 'background 0.2s',
+              }}
+            >
+              <span style={{ fontSize: 14 }}>🏭</span> Admin PG
+            </button>
+          </div>
+        </div>
       </div>
 
       <style>{`

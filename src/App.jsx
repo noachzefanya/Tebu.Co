@@ -71,11 +71,16 @@ export default function App() {
     }
   }, []);
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
   const handleLogout = async () => {
-    await logoutUser();
+    if (session?.user?.isDemo) {
+      setSession(null);
+      setProfile(null);
+      setActiveSpta(null);
+    } else {
+      await logoutUser();
+      // onAuthStateChange will clear session + profile automatically for real users
+    }
     localStorage.removeItem('tebuco_active_spta');
-    // onAuthStateChange will clear session + profile automatically
   };
 
   const handleSetSpta = (sptaData) => {
@@ -83,12 +88,13 @@ export default function App() {
     localStorage.setItem('tebuco_active_spta', JSON.stringify(sptaData));
   };
 
-  // Called by AuthScreen after a successful loginWithPhone / signUp
-  // — the onAuthStateChange listener will pick it up automatically,
-  //   but this gives the screen an immediate "something happened" signal.
-  const handleAuthSuccess = () => {
-    // No-op: the onAuthStateChange callback handles state updates.
-    // This prop exists so AuthScreen has a callback to call on success.
+  // Called by AuthScreen after a successful loginWithPhone / signUp, or a Demo Login
+  const handleAuthSuccess = (userData) => {
+    if (userData?.isDemo) {
+      setSession({ user: userData });
+      setProfile(userData);
+    }
+    // For real Supabase auth, onAuthStateChange picks it up automatically.
   };
 
   // ── Render: loading splash ──────────────────────────────────────────────────
