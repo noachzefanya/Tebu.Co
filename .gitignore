@@ -17,6 +17,16 @@ build/
 .env.test.local
 .env.production.local
 *.local
+.check_db.js
+.check_db_more.js
+.check_db2.js
+.check_info_schema.js
+.verify_schema.js
+supabase/fix_backend_anomalies.sql
+supabase/fix_profiles_and_cleanup.sql
+supabase/driver_role_migration.sql
+supabase/prevent_double_booking.sql
+supabase/clean_obsolete_tables.sql
 
 # Editor & System Files
 .vscode/

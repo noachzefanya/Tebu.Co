@@ -200,6 +200,30 @@ export function loginAsDemo(role) {
     };
   }
   
+  if (role === 'sopir') {
+    return {
+      id: 'demo-sopir',
+      full_name: 'Sutrisno (Demo Sopir)',
+      role: 'sopir',
+      phone: '081200000003',
+      isDemo: true,
+      demoMockTicket: {
+        id: 'mock-ticket-001',
+        ticket_code: 'TEBUCO-DEMO-001',
+        spta_code: 'TEBUCO-DEMO-001',
+        truck_number: 'N 8899 UY',
+        driver_name: 'Sutrisno (Demo)',
+        tonnage: 8.5,
+        status: 'on_delivery',
+        pickup_time: '14:30 WIB',
+        departure_time: '15:00 WIB',
+        scheduled_slot: new Date(Date.now() + 30 * 60000).toISOString(),
+        plot_name: 'Blok Asembagus (Mock)',
+        mill_name: 'PG Asembagus',
+      }
+    };
+  }
+  
   return {
     id: 'demo-petani',
     full_name: 'Pak Sugeng (Demo)',

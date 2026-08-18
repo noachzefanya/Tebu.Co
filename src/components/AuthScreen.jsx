@@ -302,7 +302,8 @@ export default function AuthScreen({ onLogin }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {[
                   { value: 'petani',   label: 'Petani Tebu',         icon: '🌾' },
-                  { value: 'admin_pg', label: 'Petugas Pabrik Gula', icon: '🏭' },
+                  { value: 'admin_pg', label: 'Petugas PG',          icon: '🏭' },
+                  { value: 'sopir',    label: 'Sopir Truk',          icon: '🚚' },
                 ].map(({ value, label, icon }) => (
                   <button
                     key={value}
@@ -417,30 +418,42 @@ export default function AuthScreen({ onLogin }) {
           <p style={{ textAlign: 'center', fontSize: 11, color: 'var(--color-on-surface-variant)', letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: 700 }}>
             Mode Demo / Uji Coba Cepat
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
             <button
               onClick={() => onLogin(loginAsDemo('petani'))}
               style={{
                 background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                padding: '10px', borderRadius: 10, color: 'var(--color-primary)',
-                fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                padding: '10px 4px', borderRadius: 10, color: 'var(--color-primary)',
+                fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
                 transition: 'background 0.2s',
               }}
             >
-              <span style={{ fontSize: 14 }}>🌾</span> Petani
+              <span style={{ fontSize: 16 }}>🌾</span> Petani
             </button>
             <button
               onClick={() => onLogin(loginAsDemo('admin_pg'))}
               style={{
                 background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                padding: '10px', borderRadius: 10, color: 'var(--color-tertiary)',
-                fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                padding: '10px 4px', borderRadius: 10, color: 'var(--color-tertiary)',
+                fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
                 transition: 'background 0.2s',
               }}
             >
-              <span style={{ fontSize: 14 }}>🏭</span> Admin PG
+              <span style={{ fontSize: 16 }}>🏭</span> Admin PG
+            </button>
+            <button
+              onClick={() => onLogin(loginAsDemo('sopir'))}
+              style={{
+                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                padding: '10px 4px', borderRadius: 10, color: '#facc15',
+                fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
+                transition: 'background 0.2s',
+              }}
+            >
+              <span style={{ fontSize: 16 }}>🚚</span> Sopir
             </button>
           </div>
         </div>

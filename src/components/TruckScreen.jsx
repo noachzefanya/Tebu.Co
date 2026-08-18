@@ -9,21 +9,18 @@ const MOCK_FLEET = [
     id: 'mock-1', plate_number: 'B 9182 KQA', driver_name: 'Sutrisno P.', tonnage: 22.4, status: 'in_transit',
     harvest_time: new Date(Date.now() - (3 * 3600000)).toISOString(),
     scheduled_slot: new Date(Date.now() + 600000).toISOString(),
-    departure_time: new Date(Date.now() - 2100000).toISOString(),
     mill_name: 'PG Situbondo'
   },
   {
     id: 'mock-2', plate_number: 'N 8102 UQ', driver_name: 'Ahmad Dahlan', tonnage: 24.5, status: 'in_transit',
     harvest_time: new Date(Date.now() - (4 * 3600000)).toISOString(),
     scheduled_slot: new Date(Date.now() - 3600000).toISOString(),
-    departure_time: new Date(Date.now() - 6300000).toISOString(),
     mill_name: 'PG Situbondo'
   },
   {
     id: 'mock-3', plate_number: 'W 8129 PQ', driver_name: 'Bambang U.', tonnage: 18.2, status: 'queued',
     harvest_time: new Date(Date.now() - (6 * 3600000)).toISOString(),
     scheduled_slot: null,
-    departure_time: null,
     mill_name: 'PG Situbondo'
   }
 ];
@@ -177,20 +174,30 @@ export default function TruckScreen({ active }) {
       const { data: millsData } = await supabase.from('sugar_mills').select('*');
       setMills(millsData || []);
 
-      // Fetch dispatches
-      const { data: truckData, error: fetchError } = await supabase
-        .from('truck_dispatches')
-        .select('*')
-        .neq('status', 'done')
-        .order('id', { ascending: true });
+      // Fetch spta_tickets instead of obsolete truck_dispatches
+      const { data: ticketData, error: fetchError } = await supabase
+        .from('spta_tickets')
+        .select(`
+          *,
+          harvest_records (
+            mill_name
+          )
+        `)
+        .neq('status', 'completed')
+        .order('scheduled_slot', { ascending: true });
 
       if (fetchError) throw fetchError;
 
       // Try to map mill_name if possible (assuming batch_id could link to mill_id, but for now just use first mill or fallback)
-      const mappedFleet = (truckData || []).map(t => {
-        let millName = 'PG Tujuan';
-        if (millsData && millsData.length > 0) millName = millsData[0].name;
-        return { ...t, mill_name: millName };
+      const mappedFleet = (ticketData || []).map(t => {
+        let millName = t.harvest_records?.mill_name || 'PG Tujuan';
+        if (millName === 'PG Tujuan' && millsData && millsData.length > 0) millName = millsData[0].name;
+        
+        return { 
+          ...t, 
+          mill_name: millName,
+          harvest_time: t.created_at || new Date().toISOString() 
+        };
       });
 
       setFleet(mappedFleet);
@@ -212,8 +219,8 @@ export default function TruckScreen({ active }) {
     if (channelRef.current) supabase.removeChannel(channelRef.current);
 
     channelRef.current = supabase
-      .channel('truck_dispatches_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'truck_dispatches' }, () => {
+      .channel('spta_tickets_rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'spta_tickets' }, () => {
         // Just re-fetch completely to keep it simple and ensure relations map correctly
         fetchTrucksAndMills();
       })

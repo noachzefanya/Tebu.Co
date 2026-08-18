@@ -11,6 +11,7 @@ import TicketScreen   from './components/TicketScreen.jsx';
 import BottomNav      from './components/BottomNav.jsx';
 import AuthScreen     from './components/AuthScreen.jsx';
 import MillAdminScreen from './components/MillAdminScreen.jsx';
+import DriverView     from './components/DriverView.jsx';
 import NotificationBanner from './components/NotificationBanner.jsx';
 
 // Background imagery
@@ -72,15 +73,17 @@ export default function App() {
   }, []);
 
   const handleLogout = async () => {
-    if (session?.user?.isDemo) {
-      setSession(null);
-      setProfile(null);
-      setActiveSpta(null);
-    } else {
-      await logoutUser();
-      // onAuthStateChange will clear session + profile automatically for real users
-    }
+    // 1. Force UI update segera agar tidak nge-hang
+    const wasDemo = session?.user?.isDemo;
+    setSession(null);
+    setProfile(null);
+    setActiveSpta(null);
     localStorage.removeItem('tebuco_active_spta');
+
+    // 2. Jika bukan demo, panggil backend logout
+    if (!wasDemo) {
+      await logoutUser();
+    }
   };
 
   const handleSetSpta = (sptaData) => {
@@ -166,17 +169,23 @@ export default function App() {
   // Fallback to 'petani' if profile not loaded yet to avoid blank screen
   const role = profile?.role || 'petani';
   const isAdmin = role === 'admin_pg';
+  const isDriver = role === 'sopir';
   const displayName = profile?.full_name || session.user?.user_metadata?.full_name || 'Pengguna';
 
   // ── Role badge config ───────────────────────────────────────────────────────
-  const roleBadge = isAdmin
-    ? { label: 'PETUGAS PG', icon: <ShieldCheck size={12} />, color: 'var(--color-tertiary)', bg: 'rgba(166,214,79,0.12)', border: 'rgba(166,214,79,0.3)' }
-    : { label: 'PETANI',     icon: <Sprout size={12} />,      color: 'var(--color-primary)',   bg: 'rgba(163,212,137,0.1)', border: 'rgba(163,212,137,0.25)' };
+  let roleBadge;
+  if (isAdmin) {
+    roleBadge = { label: 'PETUGAS PG', icon: <ShieldCheck size={12} />, color: 'var(--color-tertiary)', bg: 'rgba(166,214,79,0.12)', border: 'rgba(166,214,79,0.3)' };
+  } else if (isDriver) {
+    roleBadge = { label: 'SOPIR', icon: <span style={{fontSize:12}}>🚚</span>, color: '#facc15', bg: 'rgba(250,204,21,0.1)', border: 'rgba(250,204,21,0.3)' };
+  } else {
+    roleBadge = { label: 'PETANI',     icon: <Sprout size={12} />,      color: 'var(--color-primary)',   bg: 'rgba(163,212,137,0.1)', border: 'rgba(163,212,137,0.25)' };
+  }
 
   // ── Render: app shell ──────────────────────────────────────────────────────
   return (
     <div
-      className={isAdmin ? 'app-container admin-mode' : 'app-container farmer-mode'}
+      className={isAdmin ? 'app-container admin-mode' : (isDriver ? 'app-container driver-mode' : 'app-container farmer-mode')}
       style={{
         background: '#050505',
         overflow: 'hidden',
@@ -259,13 +268,14 @@ export default function App() {
           <div>
             <h1
               style={{
-                fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 800,
+                fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 800,
                 color: 'var(--color-primary)', letterSpacing: '-0.5px', lineHeight: 1.1,
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 100
               }}
             >
               Tebu.Co
             </h1>
-            <p className="text-caps c-on-surface-var" style={{ fontSize: 9, lineHeight: 1.2 }}>
+            <p className="text-caps c-on-surface-var" style={{ fontSize: 9, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 100 }}>
               {displayName}
             </p>
           </div>
@@ -300,7 +310,7 @@ export default function App() {
               background: 'rgba(255,180,171,0.1)',
               border: '1px solid rgba(255,180,171,0.2)',
               borderRadius: 8,
-              width: 32, height: 32,
+              width: 32, height: 32, flexShrink: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: 'var(--color-error)', cursor: 'pointer',
               transition: 'background 0.2s',
@@ -314,7 +324,7 @@ export default function App() {
       </header>
 
       {/* ── Farmer: global SPTA notification banner ── */}
-      {!isAdmin && <NotificationBanner activeSpta={activeSpta} />}
+      {(!isAdmin && !isDriver) && <NotificationBanner activeSpta={activeSpta} />}
 
       {/* ── Content Canvas ── */}
       <main
@@ -330,6 +340,9 @@ export default function App() {
         {isAdmin ? (
           /* ── Admin PG: Mill dashboard + live QR scanner ── */
           <MillAdminScreen profile={profile} />
+        ) : isDriver ? (
+          /* ── Sopir: Driver dashboard + QR code ── */
+          <DriverView profile={profile} />
         ) : (
           /* ── Petani: Farm management screens ── */
           <>
@@ -358,7 +371,7 @@ export default function App() {
       </main>
 
       {/* ── Bottom Navigation — petani only, hidden when modal is open ── */}
-      {!isAdmin && !isHarvestModalOpen && (
+      {(!isAdmin && !isDriver && !isHarvestModalOpen) && (
         <BottomNav activeTab={activeTab} onChange={setActiveTab} />
       )}
     </div>

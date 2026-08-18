@@ -35,12 +35,14 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [drivers, setDrivers] = useState([]);
 
   useEffect(() => {
     if (isOpen) {
       setError('');
       setSuccess('');
       fetchMills();
+      fetchDrivers();
       if (user && isSupabaseConfigured && !isDemo && isValidUUID(user?.id)) {
         fetchPlots();
       } else {
@@ -74,6 +76,15 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
       const mockData = [{ id: 'mock-1', plot_name: 'Blok Asembagus (Mock)' }];
       setPlots(mockData);
       setSelectedPlot('mock-1');
+    }
+  };
+
+  const fetchDrivers = async () => {
+    try {
+      const { data } = await supabase.from('profiles').select('id, full_name, phone_number').eq('role', 'sopir');
+      if (data) setDrivers(data);
+    } catch (err) {
+      console.warn('Failed to fetch drivers', err);
     }
   };
 
@@ -181,7 +192,7 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
     }
 
     for (let i = 0; i < trucks.length; i++) {
-      if (!trucks[i].plate || !trucks[i].driver) {
+      if (!trucks[i].plate || !trucks[i].driver_id) {
         setError(`Data Armada Truk ${i + 1} belum lengkap (Nomor Polisi & Sopir wajib diisi).`); return;
       }
     }
@@ -233,7 +244,8 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
           spta_code: sptaCode,
           truck_number: t.plate.trim() || '-',
           plate_number: t.plate.trim() || '-',
-          driver_name: t.driver.trim() || '-',
+          driver_id: t.driver_id || null,
+          driver_name: t.driver?.trim() || '-',
           net_weight_kg: weightTon * 1000,
           tonnage: weightTon,
           scheduled_slot: slotIso,
@@ -244,11 +256,19 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
       });
 
       if (!isDemo && validFarmerId && isValidUUID(harvestId)) {
-        const dbTickets = ticketRows.map(({ harvest_id, ticket_code, spta_code, truck_number, plate_number, driver_name, net_weight_kg, tonnage, scheduled_slot, status }) => ({
-          harvest_id, ticket_code, spta_code, truck_number, plate_number, driver_name, net_weight_kg, tonnage, scheduled_slot, status
+        const dbTickets = ticketRows.map(({ harvest_id, ticket_code, spta_code, truck_number, plate_number, driver_id, driver_name, net_weight_kg, tonnage, scheduled_slot, status, batch_id, spta_ticket }) => ({
+          harvest_id, ticket_code, spta_code, truck_number, plate_number, driver_id, driver_name, net_weight_kg, tonnage, scheduled_slot, status, batch_id, spta_ticket
         }));
+        
         const { error: stError } = await supabase.from('spta_tickets').insert(dbTickets);
-        if (stError) console.warn('[PlotHarvestModal] Warning insert spta_tickets:', stError.message);
+        
+        if (stError) {
+          // ROLLBACK: Jika tiket ditolak (misal karena bentrok jam nopol), hapus induk panennya
+          await supabase.from('harvest_records').delete().eq('id', harvestId);
+          
+          // Lempar pesan error dari Supabase (Trigger) ke layar agar dibaca petani
+          throw new Error(stError.message);
+        }
       }
 
       onHarvestLogged({
@@ -434,10 +454,21 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
                         onChange={e => handleTruckChange(idx, 'plate', e.target.value)}
                         style={{ ...simpleInputStyle, fontFamily: 'var(--font-mono)' }} />
                     </FieldGroup>
-                    <FieldGroup label="Nama Sopir">
-                      <input type="text" placeholder="Sutrisno P." value={truck.driver}
-                        onChange={e => handleTruckChange(idx, 'driver', e.target.value)}
-                        style={simpleInputStyle} />
+                    <FieldGroup label="Pilih Sopir">
+                      <select value={truck.driver_id || ''}
+                        onChange={e => {
+                          const copy = [...trucks];
+                          copy[idx].driver_id = e.target.value;
+                          const selectedDriver = drivers.find(d => d.id === e.target.value);
+                          copy[idx].driver = selectedDriver ? selectedDriver.full_name : '';
+                          setTrucks(copy);
+                        }}
+                        style={simpleInputStyle}>
+                        <option value="" disabled>-- Pilih Sopir Terdaftar --</option>
+                        {drivers.map(d => (
+                          <option key={d.id} value={d.id}>{d.full_name} ({d.phone_number || '-'})</option>
+                        ))}
+                      </select>
                     </FieldGroup>
                   </div>
                 </div>
