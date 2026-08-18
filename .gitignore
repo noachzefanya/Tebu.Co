@@ -27,6 +27,7 @@ supabase/fix_profiles_and_cleanup.sql
 supabase/driver_role_migration.sql
 supabase/prevent_double_booking.sql
 supabase/clean_obsolete_tables.sql
+supabase/add_rendemen_column.sql
 
 # Editor & System Files
 .vscode/

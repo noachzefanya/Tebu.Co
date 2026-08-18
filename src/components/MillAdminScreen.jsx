@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Factory, QrCode, CheckCircle, AlertTriangle, Clock, RefreshCw, Truck, Play, Search } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient.js';
 import { calculateDepartureSchedule } from '../utils/sugarcaneMath.js';
+import MillReportSummary from './MillReportSummary.jsx';
 
 export default function MillAdminScreen() {
   const [incomingTrucks, setIncomingTrucks] = useState([]);
@@ -9,6 +10,7 @@ export default function MillAdminScreen() {
   const [scannedTruck, setScannedTruck] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [queueTab, setQueueTab] = useState('transit'); // 'transit' | 'buffer'
+  const [activeScreenTab, setActiveScreenTab] = useState('operasional'); // 'operasional' | 'laporan'
   const videoRef = useRef(null);
   const [cameraError, setCameraError] = useState('');
   const [manualCode, setManualCode] = useState('');
@@ -146,7 +148,33 @@ export default function MillAdminScreen() {
       );
 
       return (
-        <div className="admin-dashboard-grid hide-scrollbar">
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 16 }}>
+          {/* Main Navigation Tabs */}
+          <div style={{ display: 'flex', gap: 12, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 16 }}>
+            <button
+              onClick={() => setActiveScreenTab('operasional')}
+              style={{
+                background: 'transparent', border: 'none', padding: '8px 16px', fontSize: 18, fontWeight: 700, cursor: 'pointer',
+                color: activeScreenTab === 'operasional' ? 'var(--color-primary)' : 'var(--color-on-surface-var)',
+                borderBottom: activeScreenTab === 'operasional' ? '3px solid var(--color-primary)' : '3px solid transparent'
+              }}
+            >
+              Pos Timbang (Operasional)
+            </button>
+            <button
+              onClick={() => setActiveScreenTab('laporan')}
+              style={{
+                background: 'transparent', border: 'none', padding: '8px 16px', fontSize: 18, fontWeight: 700, cursor: 'pointer',
+                color: activeScreenTab === 'laporan' ? 'var(--color-primary)' : 'var(--color-on-surface-var)',
+                borderBottom: activeScreenTab === 'laporan' ? '3px solid var(--color-primary)' : '3px solid transparent'
+              }}
+            >
+              Rekapitulasi Laporan
+            </button>
+          </div>
+
+          {activeScreenTab === 'operasional' ? (
+            <div className="admin-dashboard-grid hide-scrollbar">
 
           {/* ── COL 1: Gauges & Mill Stats ── */}
           <div className="admin-col">
@@ -426,6 +454,10 @@ export default function MillAdminScreen() {
               </div>
             </div>
           </div>
-        </div>
-      );
-    }
+          </div>
+        ) : (
+          <MillReportSummary />
+        )}
+      </div>
+    );
+  }
