@@ -73,7 +73,7 @@ export default function DriverView({ profile }) {
 
   if (loading) {
     return (
-      <div style={{ width: '100%', flex: 1, padding: '84px 16px 112px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', overflowY: 'auto' }}>
+      <div style={{ width: '100%', padding: '84px 16px 112px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ width: '100%', maxWidth: 448, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#888', minHeight: '60vh' }}>
           <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: '#a6d64f' }} />
           <p style={{ marginTop: 16, fontFamily: 'var(--font-display)', fontWeight: 600 }}>Memuat Tiket...</p>
@@ -84,7 +84,7 @@ export default function DriverView({ profile }) {
 
   if (error && !ticket) {
     return (
-      <div style={{ width: '100%', flex: 1, padding: '84px 16px 112px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', overflowY: 'auto' }}>
+      <div style={{ width: '100%', padding: '84px 16px 112px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ width: '100%', maxWidth: 448, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', minHeight: '60vh' }}>
           <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,100,80,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
             <ShieldCheck size={32} color="var(--color-error)" />
@@ -101,7 +101,7 @@ export default function DriverView({ profile }) {
 
   if (!ticket) {
     return (
-      <div style={{ width: '100%', flex: 1, padding: '84px 16px 112px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', overflowY: 'auto' }}>
+      <div style={{ width: '100%', padding: '84px 16px 112px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ width: '100%', maxWidth: 448, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', minHeight: '60vh' }}>
           <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(166, 214, 79, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
             <CheckCircle2 size={40} color="#a6d64f" />
@@ -138,7 +138,7 @@ export default function DriverView({ profile }) {
   const statusConfig = getStatusConfig(ticket.status);
 
   return (
-    <div style={{ width: '100%', flex: 1, padding: '84px 16px 112px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', overflowY: 'auto' }}>
+    <div style={{ width: '100%', padding: '84px 16px 112px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box' }}>
       <div style={{ width: '100%', maxWidth: 448, display: 'flex', flexDirection: 'column', gap: 16 }}>
       
       {/* ── Driver Top Navigation Tabs ── */}
