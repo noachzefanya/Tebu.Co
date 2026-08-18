@@ -62,7 +62,7 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
       if (err) throw err;
 
       if (!data || data.length === 0) {
-        const mockData = [{ id: 'mock-1', plot_name: 'Blok Asembagus (Mock)', plot_code: 'Blok Asembagus (Mock)' }];
+        const mockData = [{ id: 'mock-1', plot_name: 'Blok Asembagus (Mock)' }];
         setPlots(mockData);
         setSelectedPlot('mock-1');
       } else {
@@ -71,7 +71,7 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
       }
     } catch (err) {
       console.warn('[PlotHarvestModal] fetchPlots fallback ke mock:', err);
-      const mockData = [{ id: 'mock-1', plot_name: 'Blok Asembagus (Mock)', plot_code: 'Blok Asembagus (Mock)' }];
+      const mockData = [{ id: 'mock-1', plot_name: 'Blok Asembagus (Mock)' }];
       setPlots(mockData);
       setSelectedPlot('mock-1');
     }
@@ -113,8 +113,7 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
         await new Promise(r => setTimeout(r, 400));
         const newPlot = {
           id: `mock-plot-${Date.now()}`,
-          plot_name: plotName.trim(),
-          plot_code: plotName.trim()
+          plot_name: plotName.trim()
         };
         setPlots(prev => [newPlot, ...prev]);
         setSelectedPlot(newPlot.id);
@@ -124,12 +123,9 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
         const plotPayload = {
           farmer_id: validFarmerId,
           farmer_name: farmerName,
-          plot_code: plotName.trim(),
           plot_name: plotName.trim(),
           area_ha: parseFloat(area) || 0,
-          estimated_yield_tons: parseFloat(estTonnage) || 0,
           est_tonnage: parseFloat(estTonnage) || 0,
-          sugar_cane_variety: variety || 'Bululawang (BL)',
           variety: variety || 'Bululawang (BL)',
           sugar_mill_target: 'PG Asembagus',
           status: 'AKTIF'
@@ -209,11 +205,8 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
           farmer_id: validFarmerId,
           farmer_name: farmerName,
           plot_id: validPlotId,
-          sugar_mill: millName,
           mill_name: millName,
-          total_weight_tons: parseFloat(totalLoadTonnage) || 0,
           total_tonnage: parseFloat(totalLoadTonnage) || 0,
-          total_trucks: parseInt(truckCount, 10) || 1,
           truck_count: parseInt(truckCount, 10) || 1,
           status: 'TERJADWAL'
         };
@@ -384,7 +377,7 @@ export default function PlotHarvestModal({ isOpen, onClose, user, onHarvestLogge
               <FieldGroup label="Pilih Petak Kebun">
                 <select value={selectedPlot} onChange={e => setSelectedPlot(e.target.value)} style={selectStyle}>
                   <option value="" disabled>-- Pilih Petak Kebun --</option>
-                  {plots.map(p => <option key={p.id} value={p.id}>{p.plot_name || p.plot_code}</option>)}
+                  {plots.map(p => <option key={p.id} value={p.id}>{p.plot_name}</option>)}
                 </select>
               </FieldGroup>
 

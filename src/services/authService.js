@@ -77,6 +77,7 @@ export async function registerWithPhone({ fullName, phone, pin, role, millName =
       id:        authData.user.id,
       full_name: fullName.trim(),
       phone:     cleanPhone,
+      phone_number: cleanPhone,
       role,
       mill_name: millName.trim() || null,
     };
