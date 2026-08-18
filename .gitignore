@@ -17,11 +17,13 @@ build/
 .env.test.local
 .env.production.local
 *.local
-.check_db.js
-.check_db_more.js
-.check_db2.js
-.check_info_schema.js
-.verify_schema.js
+# Temporary Debug & Scratch Scripts
+check_*.js
+scratch_*.js
+scratch_*.cjs
+verify_schema.js
+
+# One-off Supabase SQL scripts (not standard migrations)
 supabase/fix_backend_anomalies.sql
 supabase/fix_profiles_and_cleanup.sql
 supabase/driver_role_migration.sql

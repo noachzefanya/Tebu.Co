@@ -236,7 +236,7 @@ export default function DriverView({ profile }) {
               }}>
                 <QRCodeSVG 
                   value={ticket.spta_code || ticket.ticket_code || ticket.id} 
-                  size="100%"
+                  size={256}
                   style={{ height: 'auto', maxWidth: '100%', width: '100%' }}
                   level="H"
                   fgColor="#000000"
@@ -280,6 +280,12 @@ export default function DriverView({ profile }) {
           </div>
         </div>
       )}
+
+      {/* Inject custom scrollbar hider scoped specifically for this component */}
+      <style>{`
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
     </div>
   );
 }

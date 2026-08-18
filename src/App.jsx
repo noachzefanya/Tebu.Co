@@ -12,6 +12,7 @@ import BottomNav      from './components/BottomNav.jsx';
 import AuthScreen     from './components/AuthScreen.jsx';
 import MillAdminScreen from './components/MillAdminScreen.jsx';
 import DriverView     from './components/DriverView.jsx';
+import { ErrorBoundary } from './components/ErrorBoundary.jsx';
 import NotificationBanner from './components/NotificationBanner.jsx';
 
 // Background imagery
@@ -185,7 +186,7 @@ export default function App() {
   // ── Render: app shell ──────────────────────────────────────────────────────
   return (
     <div
-      className={isAdmin ? 'app-container admin-mode' : (isDriver ? 'app-container driver-mode' : 'app-container farmer-mode')}
+      className={isAdmin ? 'app-container admin-mode' : 'app-container farmer-mode'}
       style={{
         background: '#050505',
         overflow: 'hidden',
@@ -337,6 +338,7 @@ export default function App() {
           touchAction: 'pan-y',
         }}
       >
+        <ErrorBoundary>
         {isAdmin ? (
           /* ── Admin PG: Mill dashboard + live QR scanner ── */
           <MillAdminScreen profile={profile} />
@@ -368,6 +370,7 @@ export default function App() {
             />
           </>
         )}
+        </ErrorBoundary>
       </main>
 
       {/* ── Bottom Navigation — petani only, hidden when modal is open ── */}
