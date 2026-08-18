@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Truck, MapPin, Factory, CalendarClock, QrCode, ShieldCheck, Map, Loader2, Navigation, CheckCircle2 } from 'lucide-react';
+import { Truck, MapPin, Factory, CalendarClock, QrCode, ShieldCheck, Map, Loader2, Navigation, CheckCircle2, LogOut, History } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -7,6 +7,7 @@ export default function DriverView({ profile }) {
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('tiket'); // 'tiket' | 'riwayat'
 
   const isDemo = profile?.isDemo;
 
@@ -132,15 +133,54 @@ export default function DriverView({ profile }) {
 
   return (
     <div style={{ width: '100%', padding: '84px 16px 80px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* Header Info */}
-      <div>
-        <h2 style={{ color: '#fff', fontSize: 24, fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.5px' }}>
-          SPTA Digital
-        </h2>
-        <p style={{ color: 'var(--color-on-surface-variant)', fontSize: 13, marginTop: 4 }}>
-          Tunjukkan tiket ini pada pos timbang.
-        </p>
+      
+      {/* ── Driver Top Navigation Tabs ── */}
+      <div style={{ display: 'flex', gap: 8, padding: 6, background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, zIndex: 40, flexShrink: 0 }}>
+        <button
+          onClick={() => setActiveTab('tiket')}
+          style={{
+            flex: 1, padding: '12px 16px', borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all 0.2s', border: 'none',
+            ...(activeTab === 'tiket'
+              ? { background: 'var(--color-primary)', color: '#000', boxShadow: '0 4px 12px rgba(162,255,0,0.2)' }
+              : { background: 'transparent', color: 'rgba(255,255,255,0.6)' })
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <QrCode size={16} /> Tiket Aktif
+          </div>
+        </button>
+        <button
+          onClick={() => setActiveTab('riwayat')}
+          style={{
+            flex: 1, padding: '12px 16px', borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all 0.2s', border: 'none',
+            ...(activeTab === 'riwayat'
+              ? { background: 'var(--color-primary)', color: '#000', boxShadow: '0 4px 12px rgba(162,255,0,0.2)' }
+              : { background: 'transparent', color: 'rgba(255,255,255,0.6)' })
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <History size={16} /> Riwayat
+          </div>
+        </button>
       </div>
+
+      {activeTab === 'riwayat' ? (
+        <div style={{ textAlign: 'center', padding: '40px 20px', background: 'rgba(0,0,0,0.2)', borderRadius: 24, border: '1px solid rgba(255,255,255,0.05)' }}>
+          <History size={48} color="#555" style={{ margin: '0 auto 16px' }} />
+          <h3 style={{ color: '#fff', fontSize: 18, fontWeight: 700 }}>Belum Ada Riwayat</h3>
+          <p style={{ color: '#888', marginTop: 8, fontSize: 14 }}>Tiket yang telah selesai ditimbang akan muncul di sini.</p>
+        </div>
+      ) : (
+        <>
+          {/* Header Info */}
+          <div>
+            <h2 style={{ color: '#fff', fontSize: 24, fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.5px' }}>
+              SPTA Digital
+            </h2>
+            <p style={{ color: 'var(--color-on-surface-variant)', fontSize: 13, marginTop: 4 }}>
+              Tunjukkan tiket ini pada pos timbang.
+            </p>
+          </div>
 
       {/* Main Ticket Card */}
       <div style={{
@@ -213,7 +253,9 @@ export default function DriverView({ profile }) {
           <DetailItem label="Muat di Kebun" value={ticket.pickup_time || '-'} icon={<MapPin size={14} />} />
           <DetailItem label="Est. Tonase" value={`${ticket.tonnage || 0} Ton`} highlight icon={<Truck size={14} />} />
         </div>
-      </div>
+        </div>
+      </>
+    )}
     </div>
   );
 }
