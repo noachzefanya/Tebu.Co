@@ -4,7 +4,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabaseClient.js';
 import { calculateDepartureSchedule } from '../utils/sugarcaneMath.js';
 import MillReportSummary from './MillReportSummary.jsx';
 
-export default function MillAdminScreen() {
+export default function MillAdminScreen({ profile }) {
   const [incomingTrucks, setIncomingTrucks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [scannedTruck, setScannedTruck] = useState(null);
@@ -459,7 +459,7 @@ export default function MillAdminScreen() {
           </div>
           </div>
         ) : (
-          <MillReportSummary />
+          <MillReportSummary isDemo={profile?.isDemo} />
         )}
       </div>
     );

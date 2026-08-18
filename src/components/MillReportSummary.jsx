@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient.js';
 import { Calendar, Truck, Scale, Activity, Search, RefreshCw, FileText } from 'lucide-react';
 
-export default function MillReportSummary() {
+export default function MillReportSummary({ isDemo }) {
   const [filterPeriod, setFilterPeriod] = useState('Semua'); // 'Hari Ini' | 'Minggu Ini' | 'Bulan Ini' | 'Semua'
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -10,44 +10,54 @@ export default function MillReportSummary() {
   // Fallback demo data
   const getDemoRecords = () => {
     const now = new Date();
-    const todayStr = now.toISOString();
     
-    const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
-    const lastWeek = new Date(now); lastWeek.setDate(lastWeek.getDate() - 5);
-    const lastMonth = new Date(now); lastMonth.setDate(lastMonth.getDate() - 20);
+    const generateRecordsForDaysAgo = (daysAgo, count) => {
+      return Array.from({ length: count }).map((_, i) => {
+        const date = new Date(now);
+        date.setDate(date.getDate() - daysAgo);
+        // Random time within the day (between 06:00 and 20:00)
+        date.setHours(Math.floor(Math.random() * 14) + 6, Math.floor(Math.random() * 60));
+        
+        const platPrefixes = ['N', 'L', 'W', 'B', 'AG', 'S'];
+        const randomPlate = `${platPrefixes[Math.floor(Math.random() * platPrefixes.length)]} ${Math.floor(1000 + Math.random() * 8999)} ${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`;
+        
+        const drivers = ['Budi Santoso', 'Sutrisno', 'Bambang U.', 'Sugeng', 'Yanto', 'Joko', 'Heri', 'Wawan', 'Supardi', 'Ahmad'];
+        const farmers = ['Pak Ahmad', 'Supardi', 'Darman', 'Slamet', 'Haji Lulung', 'Bu Tejo', 'Pak Karwo'];
+        const plots = ['Petak A1', 'Kebun Jati', 'Blok Barat', 'Petak B2', 'Petak C3', 'Area Timur', 'Kebun Sengon'];
+        
+        return {
+          id: `demo-${daysAgo}-${i}`,
+          spta_code: `SPTA-${8000 + Math.floor(Math.random() * 1999)}`,
+          truck_number: randomPlate,
+          driver_name: drivers[Math.floor(Math.random() * drivers.length)],
+          net_weight_kg: 18000 + Math.floor(Math.random() * 12000), // 18T to 30T
+          weighed_at: date.toISOString(),
+          rendemen: (6.5 + Math.random() * 2.5).toFixed(1), // 6.5 to 9.0
+          status: Math.random() > 0.1 ? 'completed' : 'weighed',
+          harvest_records: {
+            plots: {
+              plot_name: plots[Math.floor(Math.random() * plots.length)],
+              profiles: { full_name: farmers[Math.floor(Math.random() * farmers.length)] }
+            }
+          }
+        };
+      });
+    };
 
-    return [
-      {
-        id: '1', spta_code: 'SPTA-8921', truck_number: 'N 1234 AB', driver_name: 'Budi Santoso',
-        net_weight_kg: 24500, weighed_at: todayStr, rendemen: 7.8, status: 'weighed',
-        harvest_records: { plots: { plot_name: 'Petak A1', profiles: { full_name: 'Pak Ahmad' } } }
-      },
-      {
-        id: '2', spta_code: 'SPTA-8922', truck_number: 'B 9182 KQA', driver_name: 'Sutrisno',
-        net_weight_kg: 22100, weighed_at: todayStr, rendemen: 8.1, status: 'completed',
-        harvest_records: { plots: { plot_name: 'Kebun Jati', profiles: { full_name: 'Supardi' } } }
-      },
-      {
-        id: '3', spta_code: 'SPTA-8810', truck_number: 'W 8129 PQ', driver_name: 'Bambang U.',
-        net_weight_kg: 18500, weighed_at: yesterday.toISOString(), rendemen: 7.4, status: 'completed',
-        harvest_records: { plots: { plot_name: 'Blok Barat', profiles: { full_name: 'Pak Ahmad' } } }
-      },
-      {
-        id: '4', spta_code: 'SPTA-8705', truck_number: 'L 9912 ZX', driver_name: 'Sugeng',
-        net_weight_kg: 26000, weighed_at: lastWeek.toISOString(), rendemen: 8.5, status: 'completed',
-        harvest_records: { plots: { plot_name: 'Petak B2', profiles: { full_name: 'Darman' } } }
-      },
-      {
-        id: '5', spta_code: 'SPTA-8100', truck_number: 'AG 1122 YY', driver_name: 'Yanto',
-        net_weight_kg: 21000, weighed_at: lastMonth.toISOString(), rendemen: 6.9, status: 'completed',
-        harvest_records: { plots: { plot_name: 'Petak C3', profiles: { full_name: 'Slamet' } } }
-      }
-    ];
+    // Generate random records
+    const todayRecords = generateRecordsForDaysAgo(0, Math.floor(Math.random() * 5) + 3); // 3-7 today
+    const yesterdayRecords = generateRecordsForDaysAgo(1, Math.floor(Math.random() * 4) + 2); // 2-5 yesterday
+    const thisWeekRecords = generateRecordsForDaysAgo(4, Math.floor(Math.random() * 8) + 4); // 4-11 this week
+    const thisMonthRecords = generateRecordsForDaysAgo(15, Math.floor(Math.random() * 10) + 5); // 5-14 this month
+
+    return [...todayRecords, ...yesterdayRecords, ...thisWeekRecords, ...thisMonthRecords].sort(
+      (a, b) => new Date(b.weighed_at) - new Date(a.weighed_at)
+    );
   };
 
   const fetchRecords = async () => {
     setLoading(true);
-    if (!isSupabaseConfigured) {
+    if (!isSupabaseConfigured || isDemo) {
       setRecords(getDemoRecords());
       setLoading(false);
       return;
