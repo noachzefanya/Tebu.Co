@@ -73,38 +73,44 @@ export default function DriverView({ profile }) {
 
   if (loading) {
     return (
-      <div style={{ flex: 1, width: '100%', maxWidth: 448, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#888', padding: '84px 16px 24px' }}>
-        <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: '#a6d64f' }} />
-        <p style={{ marginTop: 16, fontFamily: 'var(--font-display)', fontWeight: 600 }}>Memuat Tiket...</p>
+      <div style={{ width: '100%', flex: 1, padding: '84px 16px 112px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', overflowY: 'auto' }}>
+        <div style={{ width: '100%', maxWidth: 448, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#888', minHeight: '60vh' }}>
+          <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: '#a6d64f' }} />
+          <p style={{ marginTop: 16, fontFamily: 'var(--font-display)', fontWeight: 600 }}>Memuat Tiket...</p>
+        </div>
       </div>
     );
   }
 
   if (error && !ticket) {
     return (
-      <div style={{ flex: 1, width: '100%', maxWidth: 448, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '84px 16px 24px', textAlign: 'center' }}>
-        <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,100,80,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-          <ShieldCheck size={32} color="var(--color-error)" />
+      <div style={{ width: '100%', flex: 1, padding: '84px 16px 112px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', overflowY: 'auto' }}>
+        <div style={{ width: '100%', maxWidth: 448, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', minHeight: '60vh' }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,100,80,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+            <ShieldCheck size={32} color="var(--color-error)" />
+          </div>
+          <h2 style={{ color: '#fff', fontSize: 20, fontWeight: 800 }}>Terjadi Kesalahan</h2>
+          <p style={{ color: '#aaa', marginTop: 8 }}>{error}</p>
+          <button onClick={fetchActiveTicket} style={{ marginTop: 24, padding: '12px 24px', background: '#a6d64f', color: '#111', borderRadius: 12, border: 'none', fontWeight: 700, cursor: 'pointer' }}>
+            Coba Lagi
+          </button>
         </div>
-        <h2 style={{ color: '#fff', fontSize: 20, fontWeight: 800 }}>Terjadi Kesalahan</h2>
-        <p style={{ color: '#aaa', marginTop: 8 }}>{error}</p>
-        <button onClick={fetchActiveTicket} style={{ marginTop: 24, padding: '12px 24px', background: '#a6d64f', color: '#111', borderRadius: 12, border: 'none', fontWeight: 700, cursor: 'pointer' }}>
-          Coba Lagi
-        </button>
       </div>
     );
   }
 
   if (!ticket) {
     return (
-      <div style={{ flex: 1, width: '100%', maxWidth: 448, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '84px 16px 24px', textAlign: 'center' }}>
-        <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(166, 214, 79, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
-          <CheckCircle2 size={40} color="#a6d64f" />
+      <div style={{ width: '100%', flex: 1, padding: '84px 16px 112px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', overflowY: 'auto' }}>
+        <div style={{ width: '100%', maxWidth: 448, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', minHeight: '60vh' }}>
+          <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(166, 214, 79, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+            <CheckCircle2 size={40} color="#a6d64f" />
+          </div>
+          <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 800, fontFamily: 'var(--font-display)' }}>Tidak Ada Tugas</h2>
+          <p style={{ color: '#9ca3af', marginTop: 8, maxWidth: 280, lineHeight: 1.5, fontSize: 14 }}>
+            Saat ini belum ada jadwal pengiriman tebu yang ditugaskan kepada Anda.
+          </p>
         </div>
-        <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 800, fontFamily: 'var(--font-display)' }}>Tidak Ada Tugas</h2>
-        <p style={{ color: '#9ca3af', marginTop: 8, maxWidth: 280, lineHeight: 1.5, fontSize: 14 }}>
-          Saat ini belum ada jadwal pengiriman tebu yang ditugaskan kepada Anda.
-        </p>
       </div>
     );
   }
@@ -132,7 +138,8 @@ export default function DriverView({ profile }) {
   const statusConfig = getStatusConfig(ticket.status);
 
   return (
-    <div style={{ flex: 1, width: '100%', maxWidth: 448, margin: '0 auto', padding: '84px 16px 24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ width: '100%', flex: 1, padding: '84px 16px 112px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', overflowY: 'auto' }}>
+      <div style={{ width: '100%', maxWidth: 448, display: 'flex', flexDirection: 'column', gap: 16 }}>
       
       {/* ── Driver Top Navigation Tabs ── */}
       <div style={{ display: 'flex', gap: 8, padding: 6, background: 'rgba(18, 24, 20, 0.8)', border: '1px solid rgba(6, 78, 59, 0.3)', borderRadius: 12, zIndex: 40, flexShrink: 0 }}>
@@ -165,13 +172,13 @@ export default function DriverView({ profile }) {
       </div>
 
       {activeTab === 'riwayat' ? (
-        <div style={{ textAlign: 'center', padding: '40px 20px', background: 'rgba(26, 35, 29, 0.6)', borderRadius: 16, border: '1px solid rgba(6, 95, 70, 0.3)' }}>
+        <div style={{ textAlign: 'center', padding: '40px 20px', background: 'rgba(26, 35, 29, 0.6)', borderRadius: 16, border: '1px solid rgba(6, 95, 70, 0.3)', width: '100%' }}>
           <History size={48} color="#4b5563" style={{ margin: '0 auto 16px' }} />
           <h3 style={{ color: '#fff', fontSize: 16, fontWeight: 600 }}>Belum Ada Riwayat</h3>
           <p style={{ color: '#9ca3af', marginTop: 8, fontSize: 13 }}>Tiket yang telah selesai ditimbang akan muncul di sini.</p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
           {/* Header Info */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
@@ -190,11 +197,12 @@ export default function DriverView({ profile }) {
             border: '1px solid rgba(6, 95, 70, 0.4)',
             borderRadius: 16,
             padding: 20,
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)', // shadow-md/shadow-lg
             backdropFilter: 'blur(4px)',
             display: 'flex',
             flexDirection: 'column',
-            gap: 20
+            gap: 20,
+            width: '100%'
           }}>
             {/* Header / Driver Info with Badge */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(6, 95, 70, 0.3)', paddingBottom: 16 }}>
@@ -222,20 +230,21 @@ export default function DriverView({ profile }) {
               <div style={{ 
                 background: '#fff', 
                 padding: 16, 
-                borderRadius: 12, 
+                borderRadius: 16, 
                 display: 'flex', 
                 flexDirection: 'column', 
                 alignItems: 'center', 
                 justifyContent: 'center', 
-                boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
                 width: '100%',
-                maxWidth: 240,
-                aspectRatio: '1/1'
+                maxWidth: 260,
+                aspectRatio: '1/1',
+                margin: '8px auto'
               }}>
                 <QRCodeSVG 
                   value={ticket.spta_code || ticket.ticket_code || ticket.id} 
                   size="100%"
-                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                  style={{ height: 'auto', maxWidth: '100%', width: '100%' }}
                   level="H"
                   fgColor="#000000"
                   bgColor="#ffffff"
@@ -278,6 +287,7 @@ export default function DriverView({ profile }) {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
