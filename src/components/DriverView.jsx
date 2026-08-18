@@ -73,44 +73,38 @@ export default function DriverView({ profile }) {
 
   if (loading) {
     return (
-      <div style={{ width: '100%', padding: '84px 16px 112px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{ width: '100%', maxWidth: 448, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#888', minHeight: '60vh' }}>
-          <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: '#a6d64f' }} />
-          <p style={{ marginTop: 16, fontFamily: 'var(--font-display)', fontWeight: 600 }}>Memuat Tiket...</p>
-        </div>
+      <div className="view-layer active hide-scrollbar" style={{ paddingBottom: 120, alignItems: 'center', justifyContent: 'center' }}>
+        <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: '#a6d64f' }} />
+        <p style={{ marginTop: 16, fontFamily: 'var(--font-display)', fontWeight: 600, color: '#888' }}>Memuat Tiket...</p>
       </div>
     );
   }
 
   if (error && !ticket) {
     return (
-      <div style={{ width: '100%', padding: '84px 16px 112px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{ width: '100%', maxWidth: 448, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', minHeight: '60vh' }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,100,80,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-            <ShieldCheck size={32} color="var(--color-error)" />
-          </div>
-          <h2 style={{ color: '#fff', fontSize: 20, fontWeight: 800 }}>Terjadi Kesalahan</h2>
-          <p style={{ color: '#aaa', marginTop: 8 }}>{error}</p>
-          <button onClick={fetchActiveTicket} style={{ marginTop: 24, padding: '12px 24px', background: '#a6d64f', color: '#111', borderRadius: 12, border: 'none', fontWeight: 700, cursor: 'pointer' }}>
-            Coba Lagi
-          </button>
+      <div className="view-layer active hide-scrollbar" style={{ paddingBottom: 120, alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,100,80,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+          <ShieldCheck size={32} color="var(--color-error)" />
         </div>
+        <h2 style={{ color: '#fff', fontSize: 20, fontWeight: 800 }}>Terjadi Kesalahan</h2>
+        <p style={{ color: '#aaa', marginTop: 8 }}>{error}</p>
+        <button onClick={fetchActiveTicket} style={{ marginTop: 24, padding: '12px 24px', background: '#a6d64f', color: '#111', borderRadius: 12, border: 'none', fontWeight: 700, cursor: 'pointer' }}>
+          Coba Lagi
+        </button>
       </div>
     );
   }
 
   if (!ticket) {
     return (
-      <div style={{ width: '100%', padding: '84px 16px 112px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{ width: '100%', maxWidth: 448, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', minHeight: '60vh' }}>
-          <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(166, 214, 79, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
-            <CheckCircle2 size={40} color="#a6d64f" />
-          </div>
-          <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 800, fontFamily: 'var(--font-display)' }}>Tidak Ada Tugas</h2>
-          <p style={{ color: '#9ca3af', marginTop: 8, maxWidth: 280, lineHeight: 1.5, fontSize: 14 }}>
-            Saat ini belum ada jadwal pengiriman tebu yang ditugaskan kepada Anda.
-          </p>
+      <div className="view-layer active hide-scrollbar" style={{ paddingBottom: 120, alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+        <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(166, 214, 79, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+          <CheckCircle2 size={40} color="#a6d64f" />
         </div>
+        <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 800, fontFamily: 'var(--font-display)' }}>Tidak Ada Tugas</h2>
+        <p style={{ color: '#9ca3af', marginTop: 8, maxWidth: 280, lineHeight: 1.5, fontSize: 14 }}>
+          Saat ini belum ada jadwal pengiriman tebu yang ditugaskan kepada Anda.
+        </p>
       </div>
     );
   }
@@ -138,8 +132,7 @@ export default function DriverView({ profile }) {
   const statusConfig = getStatusConfig(ticket.status);
 
   return (
-    <div style={{ width: '100%', padding: '84px 16px 112px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box' }}>
-      <div style={{ width: '100%', maxWidth: 448, display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div className="view-layer active hide-scrollbar" style={{ paddingBottom: 120 }}>
       
       {/* ── Driver Top Navigation Tabs ── */}
       <div style={{ display: 'flex', gap: 8, padding: 6, background: 'rgba(18, 24, 20, 0.8)', border: '1px solid rgba(6, 78, 59, 0.3)', borderRadius: 12, zIndex: 40, flexShrink: 0 }}>
@@ -287,7 +280,6 @@ export default function DriverView({ profile }) {
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 }
