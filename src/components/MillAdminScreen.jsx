@@ -10,7 +10,7 @@ export default function MillAdminScreen() {
   const [scannedTruck, setScannedTruck] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [queueTab, setQueueTab] = useState('transit'); // 'transit' | 'buffer'
-  const [activeScreenTab, setActiveScreenTab] = useState('operasional'); // 'operasional' | 'laporan'
+  const [activeTab, setActiveTab] = useState('timbangan'); // 'timbangan' | 'rekap'
   const videoRef = useRef(null);
   const [cameraError, setCameraError] = useState('');
   const [manualCode, setManualCode] = useState('');
@@ -148,33 +148,36 @@ export default function MillAdminScreen() {
       );
 
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', flex: 1, padding: '80px 24px 24px 24px', boxSizing: 'border-box' }}>
+          
           {/* Main Navigation Tabs */}
-          <div style={{ display: 'flex', gap: 12, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 16 }}>
+          <div style={{ display: 'flex', gap: 8, padding: 6, background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, marginBottom: 24, zIndex: 40, flexShrink: 0 }}>
             <button
-              onClick={() => setActiveScreenTab('operasional')}
+              onClick={() => setActiveTab('timbangan')}
               style={{
-                background: 'transparent', border: 'none', padding: '8px 16px', fontSize: 18, fontWeight: 700, cursor: 'pointer',
-                color: activeScreenTab === 'operasional' ? 'var(--color-primary)' : 'var(--color-on-surface-var)',
-                borderBottom: activeScreenTab === 'operasional' ? '3px solid var(--color-primary)' : '3px solid transparent'
+                flex: 1, padding: '12px 16px', borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all 0.2s', border: 'none',
+                ...(activeTab === 'timbangan'
+                  ? { background: 'var(--color-primary)', color: '#000', boxShadow: '0 4px 12px rgba(162,255,0,0.2)' }
+                  : { background: 'transparent', color: 'rgba(255,255,255,0.6)' })
               }}
             >
               Pos Timbang (Operasional)
             </button>
             <button
-              onClick={() => setActiveScreenTab('laporan')}
+              onClick={() => setActiveTab('rekap')}
               style={{
-                background: 'transparent', border: 'none', padding: '8px 16px', fontSize: 18, fontWeight: 700, cursor: 'pointer',
-                color: activeScreenTab === 'laporan' ? 'var(--color-primary)' : 'var(--color-on-surface-var)',
-                borderBottom: activeScreenTab === 'laporan' ? '3px solid var(--color-primary)' : '3px solid transparent'
+                flex: 1, padding: '12px 16px', borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all 0.2s', border: 'none',
+                ...(activeTab === 'rekap'
+                  ? { background: 'var(--color-primary)', color: '#000', boxShadow: '0 4px 12px rgba(162,255,0,0.2)' }
+                  : { background: 'transparent', color: 'rgba(255,255,255,0.6)' })
               }}
             >
               Rekapitulasi Laporan
             </button>
           </div>
 
-          {activeScreenTab === 'operasional' ? (
-            <div className="admin-dashboard-grid hide-scrollbar">
+          {activeTab === 'timbangan' ? (
+            <div className="admin-dashboard-grid hide-scrollbar" style={{ padding: 0 }}>
 
           {/* ── COL 1: Gauges & Mill Stats ── */}
           <div className="admin-col">
